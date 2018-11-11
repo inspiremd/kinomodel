@@ -6,7 +6,7 @@ Handles the primary functions
 """
 import sys
 from kinase_model import *
-import subprocess
+import requests
 import ast
 import urllib.request
 
@@ -16,12 +16,12 @@ def main(args=None):
 
     """
     # get the user input (a PDB code and a chain index) 
-    inputInfo = input('Please input kinase info (PDB code, chain index) e.g. (3pp0, A): ').replace(' ','').split(',')
-    pdb_chainid = tuple(inputInfo)
+    input_info = input('Please input kinase info (PDB code, chain index) e.g. (3pp0, A): ').replace(' ','').split(',')
+    pdb_chainid = tuple(input_info)
 
     # get information of the query kinase from the KLIFS database and gives values of kinase_id, name and pocket_seq (numbering)
-    cmd="curl -X GET --header 'Accept: application/json' 'http://klifs.vu-compmedchem.nl/api/structures_pdb_list?pdb-codes="+str(pdb_chainid[0])+"'" # form the query command
-    clean = subprocess.check_output(cmd, shell=True, universal_newlines=True).replace('true','True').replace('false','False') # clean up the info from KLIFS
+    url="http://klifs.vu-compmedchem.nl/api/structures_pdb_list?pdb-codes="+str(pdb_chainid[0]) # form the query command
+    clean = requests.get(url).text.replace('true','True').replace('false','False') # clean up the info from KLIFS
     for structure in ast.literal_eval(clean): # each pdb code corresponds to multiple structures
         if structure['chain'] == str(pdb_chainid[1]): # find the specific chain
             kinase_id = int(structure['kinase_ID'])
