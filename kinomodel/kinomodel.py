@@ -35,6 +35,7 @@ def main(args=None):
 
     # Get the numbering of the 85 pocket residues
     cmd = "http://klifs.vu-compmedchem.nl/details.php?structure_id="+str(struct_id)
+    preload = urllib.request.urlopen(cmd)
     info = urllib.request.urlopen(cmd)
     for line_number, line in enumerate(info):
         line = line.decode()
@@ -70,9 +71,9 @@ def main(args=None):
     key_res.append(numbering[80]) # res81 (DFG-Asp)
 
     # FRET distance
-    key_res.append(numbering[84]+6 if numbering[84] else 0) # not in the list of 85 (equivalent to Aura"S284"), only infer if the reference is non-zero
+    key_res.append(numbering[80]+10) # not in the list of 85 (equivalent to Aura"S284"), use the conservative DFG-Asp as a reference
 
-    key_res.append(numbering[58]+2 if numbering[58] else 0) # not in the list of 85 (equivalent to Aura"L225"), only infer if the reference is non-zero
+    key_res.append(numbering[80]-20) # not in the list of 85 (equivalent to Aura"L225"), use the conservative DFG-Asp as a reference
 
     # print out kinase information
     print ("---------------------Results----------------------")
@@ -89,7 +90,7 @@ def main(args=None):
     '''    
     When an input pdb structure is given, the atom indices of the relevant atoms will be inferred and used to calculate dihedrals and distances as collective variables. 
     '''
-    # get the user-specified structure (a pdb structure or a trajectory) e.g. ./data/3pp0_A.pdb 
+    # get the user-specified structure (a pdb structure or a trajectory) 
     input_struct = str(input('Please specify the (full path to) structure to analyze (a pdb structure or a trajectory): '))
     if '.pdb' in input_struct: # if the input is a pdb structure
         pdb = open(input_struct, 'r')
@@ -97,13 +98,19 @@ def main(args=None):
         # get the array of atom indices for the calculation of: 
 #            * eight dihedrals (a 8*4 array where each row contains indices of the four atoms for each dihedral)
 #            * five ditances (a 5*2 array where each row contains indices of the two atoms for each dihedral)
-        dih = np.ndarray(shape=(8,4), dtype=int, order = 'C')
-        dis = np.ndarray(shape=(5,2), dtype=int, order = 'C')
+        dih = np.zeros(shape=(8,4), dtype=int, order = 'C')
+        dis = np.zeros(shape=(5,2), dtype=int, order = 'C')
+
+        # name list of the dihedrals and distances
+        dih_names = ['aC_rot', 'xDFG_phi', 'xDFG_psi','dFG_phi', 'dFG_psi', 'DfG_phi', 'DfG_psi', 'DfG_chi']
+        dis_names = ['K_E1', 'K_E2', 'DFG_conf1', 'DFG_conf2', 'fret']
+
+        # gp through each line of the pdb file
         for line in lines:
             line = line.strip('\n')
             split = line.split()
-            if len(split) < 12:
-                break
+            if len(split) < 8: # if we are at the connection section
+                break # stop searching
             # dihedral 1: between aC and aE helices
             dih[0][0] = int(split[1]) if split[5] == str(numbering[20]) and split[2] == 'CA' else dih[0][0]
             dih[0][1] = int(split[1]) if split[5] == str(numbering[28]) and split[2] == 'CA' else dih[0][1]
@@ -152,18 +159,34 @@ def main(args=None):
             dis[3][0] = int(split[1]) if split[5] == str(numbering[16]) and split[2] == 'CA' else dis[3][0]
             dis[3][1] = dis[2][1]
             # distance 5: FRET distance
-            dis[4][0] = int(split[1]) if numbering[84] and split[5] == str(int(numbering[84]+6)) and split[2] == 'CA' else dis[4][0]
-            dis[4][1] = int(split[1]) if numbering[58] and split[5] == str(int(numbering[58]+2)) and split[2] == 'CA' else dis[4][1]              
+            dis[4][0] = int(split[1]) if split[5] == str(int(numbering[80]+10)) and split[2] == 'CA' else dis[4][0]
+            dis[4][1] = int(split[1]) if split[5] == str(int(numbering[80]-20)) and split[2] == 'CA' else dis[4][1]              
+    # check if there is any missing coordinates; if so, skip dihedral/distance calculation for those residues
+    check_flag = 1
+    for i in range(len(dih)):
+        if 0 in dih[i]:
+            dih = np.delete(dih, (i), axis=0)
+            print ('The "'+str(dih_name[i])+'" dihedral will not be computed due to missing coordinates.')
+            dih_names.remove(dih_names[i])
+            check_flag = 0
+    for i in range(len(dis)):
+        if 0 in dis[i]:
+            dis = np.delete(dis, (i), axis=0)
+            print ('The "'+str(dis_names[i])+'" distance will not be calculated due to missing coordinates.')
+            dis_names.remove(dis_names[i])
+            check_flag = 0
+    if check_flag:
+        print ("There is no missing coordinates.  All dihedrals and distances will be computed.")
     # calculate the dihedrals and distances
     traj = md.load(input_struct)        
     dihedrals = md.compute_dihedrals(traj,dih)
     distances = md.compute_distances(traj,dis)
-    print ("The list of dihedrals:")
+ 
+    print ("The computed dihedrals are:")
     print (dihedrals)
-    print ("The list of distances:")
+    print ("The computed distances are:")
     print (distances)
     #elif '.pdb' in input_struct: # if the input is a MDtraj
-
     return dihedrals, distances
 
 if __name__ == "__main__":
