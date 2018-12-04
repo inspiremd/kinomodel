@@ -14,18 +14,31 @@ import numpy as np
 import mdtraj as md
 import subprocess
 
+# clean traceback msgs
+sys.tracebacklimit = 0
 
-def interact(args=None):
+
+def basics(args=None):
     '''
     When given a PDB code plus a chain index, this script computes distances as well as features such as intermolecular H-bonding that together define protein-ligand interaction.
 
     '''
     # get the the relevant PDB code and chain index from user input
-    input_info = input(
-        'Please input the PDB code and chain index of the structure you initialized or will initialize your simulation with) e.g. (3pp0, A): '
-    ).replace(' ', '').split(',')
+    input_info = str(
+        input(
+            'Please input the PDB code and chain index of the structure you initialized or will initialize your simulation with) e.g. (3pp0, A): '
+        )).replace(' ', '').split(',')
     pdb_chainid = tuple(input_info)
-    #pdb_chainid = ('3rcd','A')
+
+    # make sure the input format is expect
+    if len(input_info) != 2:
+        raise ValueError(
+            "The input must only be PDB_code and chain_id, separated by a comma."
+        )
+    elif type(input_info[0]) == str and type(input_info[1]) == str:
+        pdb_chainid = tuple(input_info)
+    else:
+        raise ValueError("The input must be a string (PDB_code,chain_id).")
 
     # get information of the query kinase from the KLIFS database and gives values of kinase_id, name and pocket_seq (numbering)
     url = "http://klifs.vu-compmedchem.nl/api/structures_pdb_list?pdb-codes=" + str(
@@ -75,11 +88,17 @@ def interact(args=None):
     print("Structure ID: " + str(struct_id))
     print("Ligand name: " + str(ligand))
     print("Numbering of the 85 pocket residues: " + str(numbering))
+
+    return pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq, numbering
+
+
+def features(pdb_chainid, ligand, numbering):
     '''    
     Download the pdb structure corresponding to the given PDB code and chain index, where the atom indices of the relevant atoms will be inferred and used to calculate dihedrals and distances as collective variables. 
     '''
     # download the pdb structure
-    cmd = 'wget http://www.pdb.org/pdb/files/' + str(pdb_chainid[0]) + '.pdb'
+    cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
+        pdb_chainid[0]) + '.pdb'
     subprocess.call(cmd, shell=True)
 
     # get topology info from the structure
@@ -163,4 +182,11 @@ def interact(args=None):
     subprocess.call(rm_file, shell=True)
     del traj, dis
 
-    return pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq, numbering, mean_dist
+    return mean_dist
+
+
+if __name__ == "__basics__":
+    (pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq,
+     numbering) = basics()
+if __name__ == "__features__":
+    features(pdb_chainid, ligand, numbering)

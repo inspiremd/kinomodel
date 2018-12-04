@@ -13,18 +13,30 @@ import numpy as np
 import mdtraj as md
 import subprocess
 
+# clean traceback msgs
+sys.tracebacklimit = 0
 
-def protein(args=None):
+
+def basics(args=None):
     '''
-    When given a PDB code plus a chain index, this script collects information including (1) the kinase ID, (2) the standard name, (3) the KLIFS-defined structure ID, (4) the KLIFS-defined sequence of 85 binding pocket residues (http://klifs.vu-compmedchem.nl/index.php), (5) the indices of the 85 residues in the corresponding structure, and (6) residue indices involved in collective variables for kinase conformational changes and ligand interactions.
+    When given a PDB code plus a chain index, this script collects information including (1) the kinase ID, (2) the standard name, (3) the KLIFS-defined structure ID, (4) the KLIFS-defined sequence of 85 binding pocket residues (http://klifs.vu-compmedchem.nl/index.php), (5) the indices of the 85 residues in the corresponding structure, (6) residue indices involved in collective variables for kinase conformational changes and ligand interactions, (7) key dihedral angles and (8) intramolecular distances that are relevant to kinase conformation.
 
     '''
     # get the the relevant PDB code and chain index from user input
-    input_info = input(
-        'Please input the PDB code and chain index of the structure you initialized or will initialize your simulation with) e.g. (3pp0, A): '
-    ).replace(' ', '').split(',')
-    pdb_chainid = tuple(input_info)
-    #pdb_chainid = ('3pp0','A')
+    input_info = str(
+        input(
+            'Please input the PDB code and chain index of the structure you initialized or will initialize your simulation with) e.g. (3pp0, A): '
+        )).replace(' ', '').split(',')
+
+    # make sure the input format is expect
+    if len(input_info) != 2:
+        raise ValueError(
+            "The input must only be PDB_code and chain_id, separated by a comma."
+        )
+    elif type(input_info[0]) == str and type(input_info[1]) == str:
+        pdb_chainid = tuple(input_info)
+    else:
+        raise ValueError("The input must be a string (PDB_code,chain_id).")
 
     # get information of the query kinase from the KLIFS database and gives values of kinase_id, name and pocket_seq (numbering)
     url = "http://klifs.vu-compmedchem.nl/api/structures_pdb_list?pdb-codes=" + str(
@@ -99,11 +111,17 @@ def protein(args=None):
     print("Structure ID: " + str(struct_id))
     print("Numbering of the 85 pocket residues: " + str(numbering))
     print("Residues involved in collective variables: " + str(key_res))
+
+    return pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering, key_res
+
+
+def features(pdb_chainid, numbering):
     '''    
     Download the pdb structure corresponding to the given PDB code and chain index, where the atom indices of the relevant atoms will be inferred and used to calculate dihedrals and distances as collective variables. 
     '''
     # download the pdb structure
-    cmd = 'wget http://www.pdb.org/pdb/files/' + str(pdb_chainid[0]) + '.pdb'
+    cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
+        pdb_chainid[0]) + '.pdb'
     subprocess.call(cmd, shell=True)
 
     # get topology info from the structure
@@ -255,16 +273,23 @@ def protein(args=None):
     dihedrals = md.compute_dihedrals(traj, dih)
     distances = md.compute_distances(traj, dis)
 
-    print ("Key dihedrals relevant to kinase conformation are as follows:")
-    print (dih_names) 
-    print (dihedrals)
-    print ("Key distances relevant to kinase conformation are as follows:")
-    print (dis_names)
-    print (distances)
+    print("Key dihedrals relevant to kinase conformation are as follows:")
+    print(dih_names)
+    print(dihedrals)
+    print("Key distances relevant to kinase conformation are as follows:")
+    print(dis_names)
+    print(distances)
 
     # clean up
     rm_file = 'rm ./' + str(pdb_chainid[0]) + '.pdb'
     subprocess.call(rm_file, shell=True)
     del traj, dih, dis
 
-    return pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering, key_res, dihedrals, distances
+    return dihedrals, distances
+
+
+if __name__ == "__basics__":
+    (pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering,
+     key_res) = basics()
+if __name__ == "__features__":
+    features(pdb_chainid, numbering)
