@@ -88,11 +88,11 @@ class ProteinTestCase(unittest.TestCase):
         self.assertEqual(
             round(
                 np.asscalar(pf.features(pdb_chainid, numbering)[0][0][0]), 7),
-            -1.9823251)  # the first dihedral value
+            -2.0228872)  # the first dihedral value
         self.assertEqual(
             round(
                 np.asscalar(pf.features(pdb_chainid, numbering)[1][0][0]), 7),
-            1.0951071)  # the first distance value
+            0.7770488)  # the first distance value
 
         # example 2: a kinase with gap(s) in the binding pocket residues
         pf.input = MagicMock(return_value='pdb')
@@ -109,11 +109,11 @@ class ProteinTestCase(unittest.TestCase):
         self.assertEqual(
             round(
                 np.asscalar(pf.features(pdb_chainid, numbering)[0][0][0]), 7),
-            -2.1301837)  # the first dihedral value
+            -2.1615183)  # the first dihedral value
         self.assertEqual(
             round(
                 np.asscalar(pf.features(pdb_chainid, numbering)[1][0][0]), 7),
-            1.2500536)  # the first distance value
+            1.0546854)  # the first distance value
         self.assertEqual(len(pf.features(pdb_chainid, numbering)[1][0]), 4)
 
 

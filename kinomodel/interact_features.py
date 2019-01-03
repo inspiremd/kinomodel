@@ -150,6 +150,8 @@ def features(pdb_chainid, ligand, numbering):
     if del_lst:  # delete them all at once
         dis = np.delete(dis, (del_lst), axis=0)
         check_flag = 0
+    for i in range(len(dis)):
+        dis[i] -= 1 # the atom indices fed to mdtraj should be 0-based
     if check_flag:
         print(
             "There is no missing coordinates.  All distances will be computed."
