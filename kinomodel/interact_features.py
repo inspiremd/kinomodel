@@ -187,8 +187,8 @@ def features(pdb_chainid, ligand, numbering):
     return mean_dist
 
 
-if __name__ == "__basics__":
+if __name__ == "if":
     (pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq,
      numbering) = basics()
-if __name__ == "__features__":
+#if __name__ == "__features__":
     features(pdb_chainid, ligand, numbering)

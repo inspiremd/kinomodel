@@ -292,8 +292,8 @@ def features(pdb_chainid, numbering):
     return dihedrals, distances
 
 
-if __name__ == "__basics__":
+if __name__ == "pf":
     (pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering,
      key_res) = basics()
-if __name__ == "__features__":
+#if __name__ == "__features__":
     features(pdb_chainid, numbering)
