@@ -6,8 +6,6 @@ Handles the primary functions
 '''
 import sys
 from kinase_model import *
-import protein_features as pf
-import interact_features as inf
 # clean traceback msgs
 sys.tracebacklimit = 0
 
@@ -26,12 +24,14 @@ def main():
         )
 
     if input_info == "conf":
+        import protein_features as pf
         (pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering,
          key_res) = pf.basics()
         (dihedrals, distances) = pf.features(pdb_chainid, numbering)
         my_kinase = Kinase(pdb_chainid, kinase_id, name, struct_id, pocket_seq,
                            numbering, key_res, dihedrals, distances)
     elif input_info == "interact":
+        import interact_features as inf
         (pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq,
          numbering) = inf.basics()
         mean_dist = inf.features(pdb_chainid, ligand, numbering)

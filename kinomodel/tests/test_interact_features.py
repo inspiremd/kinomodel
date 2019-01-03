@@ -85,7 +85,7 @@ class InteractTestCase(unittest.TestCase):
         self.assertEqual(
             round(
                 np.asscalar(inf.features(pdb_chainid, ligand, numbering)), 7),
-            2.5292468)  # mean ligand-pocket distance
+            2.4138606)  # mean ligand-pocket distance
 
         # example 2: a kinase with gap(s) in the binding pocket residues
         inf.input = MagicMock(return_value='pdb')
@@ -103,7 +103,7 @@ class InteractTestCase(unittest.TestCase):
         self.assertEqual(
             round(
                 np.asscalar(inf.features(pdb_chainid, ligand, numbering)), 7),
-            1.5608727)  # mean ligand-pocket distance
+            1.5190988)  # mean ligand-pocket distance
 
 
 if __name__ == '__main__':

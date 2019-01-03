@@ -245,6 +245,8 @@ def features(pdb_chainid, numbering):
                 '" dihedral will not be computed due to missing coordinates.')
             dih_names.remove(dih_names[i])
             check_flag = 0
+        else: # the atom indices given to mdtraj should be 0-based
+            dih[i] = dih[i]-1
     for i in range(len(dis)):
         if 0 in dis[i]:
             dis = np.delete(dis, (i), axis=0)
@@ -254,6 +256,8 @@ def features(pdb_chainid, numbering):
             )
             dis_names.remove(dis_names[i])
             check_flag = 0
+        else: # the atom indices given to mdtraj should be 0-based
+            dis[i] = dis[i]-1
     if check_flag:
         print(
             "There is no missing coordinates.  All dihedrals and distances will be computed."
@@ -272,10 +276,10 @@ def features(pdb_chainid, numbering):
         traj = md.load(str(pdb_chainid[0]) + '.pdb')
     dihedrals = md.compute_dihedrals(traj, dih)
     distances = md.compute_distances(traj, dis)
-
     print("Key dihedrals relevant to kinase conformation are as follows:")
     print(dih_names)
-    print(dihedrals)
+    #print(dihedrals/np.pi*180) # dihedrals in degrees
+    print(dihedrals) # dihedrals in radians
     print("Key distances relevant to kinase conformation are as follows:")
     print(dis_names)
     print(distances)
