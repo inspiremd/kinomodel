@@ -117,6 +117,7 @@ def features(pdb_chainid, ligand, numbering):
     # parse the topology info
     pocket_atm = []
     chain_num = 0
+    atm_count = 0
     count = 0
     for line in atoms:
         # find the key binding pocket atoms in the protein
@@ -130,11 +131,12 @@ def features(pdb_chainid, ligand, numbering):
             # for the specified chain and ligand heavy atoms
             if line[5] == int(chain_num + 1) and 'H' not in line[1]:
                 for i in range(85):
-                    dis[count * 85 + i][0] = line[0]
+                    dis[count * 85 + i][0] = atm_count
                     dis[count * 85 + i][1] = pocket_atm[i]
                 count += 1
         else:
             chain_num = line[5]
+        atm_count += 1
 
     # clean array and remove empty lines
     np.set_printoptions(threshold=np.nan)
@@ -151,7 +153,7 @@ def features(pdb_chainid, ligand, numbering):
         dis = np.delete(dis, (del_lst), axis=0)
         check_flag = 0
     for i in range(len(dis)):
-        dis[i] -= 1 # the atom indices fed to mdtraj should be 0-based
+        dis[i] -= 1  # the atom indices fed to mdtraj should be 0-based
     if check_flag:
         print(
             "There is no missing coordinates.  All distances will be computed."
@@ -190,5 +192,4 @@ def features(pdb_chainid, ligand, numbering):
 if __name__ == "if":
     (pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq,
      numbering) = basics()
-#if __name__ == "__features__":
     features(pdb_chainid, ligand, numbering)

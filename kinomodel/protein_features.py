@@ -58,10 +58,11 @@ def basics(args=None):
     preload = urllib.request.urlopen(cmd)
     info = urllib.request.urlopen(cmd)
     for line_number, line in enumerate(info):
-        line = line.decode()
+        line = line.decode().replace('_', '')
         if 'pocketResidues=[' in line:
             numbering = ast.literal_eval(
                 (line[line.find('=') + 1:line.find(';')]))
+            break
     # check if there is gaps/missing residues among the pocket residues. If so, enforce their indices as 0 and avoid using them to compute collective variables.
     for i in range(len(numbering)):
         if numbering[i] == -1:
@@ -145,108 +146,110 @@ def features(pdb_chainid, numbering):
     dis_names = ['K_E1', 'K_E2', 'DFG_conf1', 'DFG_conf2', 'fret']
 
     # parse the topology info
+    '''
+    The coordinates are located by row number (usually is atom index minus one, which is also why it's zero-based) by mdtraj but when the atom indices are not continuous there is a problem so a safer way to locate the coordinates is through row number (as a fake atom index) in case the atom indices are not continuous.
+    '''
+    count = 0  # keep track of row indices as "atom indices"
     for line in atoms:
         # for the specified chain
         if line[5] == chain_index:
             # dihedral 1: between aC and aE helices
-            dih[0][0] = line[0] if line[3] == numbering[20] and line[
+            dih[0][0] = count if line[3] == numbering[20] and line[
                 1] == 'CA' else dih[0][0]
-            dih[0][1] = line[0] if line[3] == numbering[28] and line[
+            dih[0][1] = count if line[3] == numbering[28] and line[
                 1] == 'CA' else dih[0][1]
-            dih[0][2] = line[0] if line[3] == numbering[60] and line[
+            dih[0][2] = count if line[3] == numbering[60] and line[
                 1] == 'CA' else dih[0][2]
-            dih[0][3] = line[0] if line[3] == numbering[62] and line[
+            dih[0][3] = count if line[3] == numbering[62] and line[
                 1] == 'CA' else dih[0][3]
-
             # dihedral 2 & 3: X-DFG Phi & Psi
-            dih[1][0] = line[0] if line[3] == numbering[78] and line[
+            dih[1][0] = count if line[3] == numbering[78] and line[
                 1] == 'C' else dih[1][0]
-            dih[1][1] = line[0] if line[3] == numbering[79] and line[
+            dih[1][1] = count if line[3] == numbering[79] and line[
                 1] == 'N' else dih[1][1]
-            dih[1][2] = line[0] if line[3] == numbering[79] and line[
+            dih[1][2] = count if line[3] == numbering[79] and line[
                 1] == 'CA' else dih[1][2]
-            dih[1][3] = line[0] if line[3] == numbering[79] and line[
+            dih[1][3] = count if line[3] == numbering[79] and line[
                 1] == 'C' else dih[1][3]
             dih[2][0] = dih[1][1]
             dih[2][1] = dih[1][2]
             dih[2][2] = dih[1][3]
-            dih[2][3] = line[0] if line[3] == numbering[80] and line[
+            dih[2][3] = count if line[3] == numbering[80] and line[
                 1] == 'N' else dih[2][3]
 
             # dihedral 4 & 5: DFG-Asp Phi & Psi
             dih[3][0] = dih[1][3]
             dih[3][1] = dih[2][3]
-            dih[3][2] = line[0] if line[3] == numbering[80] and line[
+            dih[3][2] = count if line[3] == numbering[80] and line[
                 1] == 'CA' else dih[3][2]
-            dih[3][3] = line[0] if line[3] == numbering[80] and line[
+            dih[3][3] = count if line[3] == numbering[80] and line[
                 1] == 'C' else dih[3][3]
             dih[4][0] = dih[3][1]
             dih[4][1] = dih[3][2]
             dih[4][2] = dih[3][3]
-            dih[4][3] = line[0] if line[3] == numbering[81] and line[
+            dih[4][3] = count if line[3] == numbering[81] and line[
                 1] == 'N' else dih[4][3]
 
             # dihedral 6 & 7: DFG-Phe Phi & Psi
             dih[5][0] = dih[3][3]
             dih[5][1] = dih[4][3]
-            dih[5][2] = line[0] if line[3] == numbering[81] and line[
+            dih[5][2] = count if line[3] == numbering[81] and line[
                 1] == 'CA' else dih[5][2]
-            dih[5][3] = line[0] if line[3] == numbering[81] and line[
+            dih[5][3] = count if line[3] == numbering[81] and line[
                 1] == 'C' else dih[5][3]
             dih[6][0] = dih[5][1]
             dih[6][1] = dih[5][2]
             dih[6][2] = dih[5][3]
-            dih[6][3] = line[0] if line[3] == numbering[82] and line[
+            dih[6][3] = count if line[3] == numbering[82] and line[
                 1] == 'N' else dih[6][3]
 
             # dihedral 8: DFG-Phe Chi
             dih[7][0] = dih[5][1]
             dih[7][1] = dih[5][2]
-            dih[7][2] = line[0] if line[3] == numbering[81] and line[
+            dih[7][2] = count if line[3] == numbering[81] and line[
                 1] == 'CB' else dih[7][2]
-            dih[7][3] = line[0] if line[3] == numbering[81] and line[
+            dih[7][3] = count if line[3] == numbering[81] and line[
                 1] == 'CG' else dih[7][3]
 
             # distance 1 & 2: K-E salt bridge
-            dis[0][0] = line[0] if line[3] == numbering[16] and line[
+            dis[0][0] = count if line[3] == numbering[16] and line[
                 1] == 'NZ' else dis[0][0]
-            dis[0][1] = line[0] if line[3] == numbering[23] and line[
+            dis[0][1] = count if line[3] == numbering[23] and line[
                 1] == 'OE1' else dis[0][1]
-            dis[1][0] = line[0] if line[3] == numbering[16] and line[
+            dis[1][0] = count if line[3] == numbering[16] and line[
                 1] == 'NZ' else dis[1][0]
-            dis[1][1] = line[0] if line[3] == numbering[23] and line[
+            dis[1][1] = count if line[3] == numbering[23] and line[
                 1] == 'OE2' else dis[1][1]
 
             # distance 3 & 4: DFG conformation-related distances
-            dis[2][0] = line[0] if line[3] == numbering[27] and line[
+            dis[2][0] = count if line[3] == numbering[27] and line[
                 1] == 'CA' else dis[2][0]
-            dis[2][1] = line[0] if line[3] == numbering[81] and line[
+            dis[2][1] = count if line[3] == numbering[81] and line[
                 1] == 'CZ' else dis[2][1]
-            dis[3][0] = line[0] if line[3] == numbering[16] and line[
+            dis[3][0] = count if line[3] == numbering[16] and line[
                 1] == 'CA' else dis[3][0]
             dis[3][1] = dis[2][1]
 
             # distance 5: FRET distance
-            dis[4][0] = line[0] if line[3] == int(
+            dis[4][0] = count if line[3] == int(
                 numbering[80] + 10) and line[1] == 'CA' else dis[4][0]
-            dis[4][1] = line[0] if line[3] == int(
+            dis[4][1] = count if line[3] == int(
                 numbering[80] - 20) and line[1] == 'CA' else dis[4][1]
 
         if line[5] > chain_index:
             break
 
+        count += 1
     # check if there is any missing coordinates; if so, skip dihedral/distance calculation for those residues
     check_flag = 1
     for i in range(len(dih)):
         if 0 in dih[i]:
             dih = np.delete(dih, (i), axis=0)
             print(
-                'The "' + str(dih_name[i]) +
+                'The "' + str(dih_names[i]) +
                 '" dihedral will not be computed due to missing coordinates.')
             dih_names.remove(dih_names[i])
             check_flag = 0
-        else: # the atom indices given to mdtraj should be 0-based
-            dih[i] = dih[i]-1
     for i in range(len(dis)):
         if 0 in dis[i]:
             dis = np.delete(dis, (i), axis=0)
@@ -256,8 +259,6 @@ def features(pdb_chainid, numbering):
             )
             dis_names.remove(dis_names[i])
             check_flag = 0
-        else: # the atom indices given to mdtraj should be 0-based
-            dis[i] = dis[i]-1
     if check_flag:
         print(
             "There is no missing coordinates.  All dihedrals and distances will be computed."
@@ -279,7 +280,7 @@ def features(pdb_chainid, numbering):
     print("Key dihedrals relevant to kinase conformation are as follows:")
     print(dih_names)
     #print(dihedrals/np.pi*180) # dihedrals in degrees
-    print(dihedrals) # dihedrals in radians
+    print(dihedrals)  # dihedrals in radians
     print("Key distances relevant to kinase conformation are as follows:")
     print(dis_names)
     print(distances)
@@ -295,5 +296,4 @@ def features(pdb_chainid, numbering):
 if __name__ == "pf":
     (pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering,
      key_res) = basics()
-#if __name__ == "__features__":
     features(pdb_chainid, numbering)
