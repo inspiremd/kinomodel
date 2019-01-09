@@ -1,46 +1,111 @@
 '''
 kinomodel.py
-This is a tool for kinase conformation/ligand binding pose modeling through the entire Kinome.
+This is a tool for kinase conformational/ligand binding featurization through the entire Kinome.
 Handles the primary functions
 
 '''
 import sys
-from kinase_model import *
+import argparse
+import kinase_model
 # clean traceback msgs
 sys.tracebacklimit = 0
 
 
-def main():
+# main function
+def main(args):
+    """
+    This is the main function for kinomodel. It takes the PDB code, chain id and certain coordinates of a kinase from a command line and returns its basic information and structural and/or interation features.
 
-    # get parameters from the protein or interact featurization modules to populate a Kinase or Interact object based on user intention
-    input_info = input(
-        'Please specify whether you would like to compute collective variables related to protein conformation or protein-ligand interaction (by typing "conf" or "interact"): '
-    )
+    Parameters
+    ----------
+    args: a Namespace object from argparse
+        Information from parsing the command line
+        e.g. Namespace(chain='A', coord='pdb', feature='conf', pdb='3PP0')
+    Returns
+    -------
+    my_kinase: a Kinase object from kinase_model
+        Contains basic information of a kinase including PDB code, chain id, kinase id, name, structure id, ligand name, the 85 pocket residues and their numbering,
+                           key dihedrals and distances that define the conformational state of a kinase, the mean distance between ligand heavy atoms and the pocket residues etc.
 
-    # make sure the input format is expect
-    if str(input_info) != 'conf' and str(input_info) != 'interact':
-        raise ValueError(
-            'You must choose from kinase conformation ("conf") and ligand interaction ("interact").'
-        )
-
-    if input_info == "conf":
+    """
+    if args.feature == "conf":
         import protein_features as pf
-        (pdb_chainid, kinase_id, name, struct_id, pocket_seq, numbering,
-         key_res) = pf.basics()
-        (dihedrals, distances) = pf.features(pdb_chainid, numbering)
-        my_kinase = Kinase(pdb_chainid, kinase_id, name, struct_id, pocket_seq,
-                           numbering, key_res, dihedrals, distances)
-    elif input_info == "interact":
+        (kinase_id, name, struct_id, pocket_seq, numbering,
+         key_res) = pf.basics(args.pdb, args.chain)
+        ligand = 'N/A'
+        mean_dist = 0
+        (dihedrals, distances) = pf.features(args.pdb, args.chain, args.coord,
+                                             numbering)
+        my_kinase = kinase_model.Kinase(
+            args.pdb, args.chain, kinase_id, name, struct_id, ligand,
+            pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
+    elif args.feature == "interact":
         import interact_features as inf
-        (pdb_chainid, kinase_id, name, struct_id, ligand, pocket_seq,
-         numbering) = inf.basics()
-        mean_dist = inf.features(pdb_chainid, ligand, numbering)
-        my_interact = Interact(pdb_chainid, kinase_id, name, struct_id, ligand,
-                               pocket_seq, numbering, mean_dist)
-
-    return
+        (kinase_id, name, struct_id, ligand, pocket_seq,
+         numbering) = inf.basics(args.pdb, args.chain)
+        key_res = []
+        dihedrals = []
+        distances = []
+        mean_dist = inf.features(args.pdb, args.chain, args.coord, ligand,
+                                 numbering)
+        my_kinase = kinase_model.Kinase(
+            args.pdb, args.chain, kinase_id, name, struct_id, ligand,
+            pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
+    elif args.feature == "both":
+        import protein_features as pf
+        import interact_features as inf
+        (kinase_id, name, struct_id, ligand, pocket_seq,
+         numbering) = inf.basics(args.pdb, args.chain)
+        (kinase_id, name, struct_id, pocket_seq, numbering,
+         key_res) = pf.basics(args.pdb, args.chain)
+        (dihedrals, distances) = pf.features(args.pdb, args.chain, args.coord,
+                                             numbering)
+        mean_dist = inf.features(args.pdb, args.chain, args.coord, ligand,
+                                 numbering)
+        my_kinase = kinase_model.Kinase(
+            args.pdb, args.chain, kinase_id, name, struct_id, ligand,
+            pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
+    return my_kinase
 
 
 if __name__ == "__main__":
+    # parsing command-line arguments
+    parser = argparse.ArgumentParser(
+        prog='kinomodel',
+        description='Featurize kinase structures',
+    )
+    parser.add_argument(
+        '--pdb',
+        required=True,
+        action='store',
+        nargs='?',
+        type=str,
+        help='the PDB code of the structure to featurize')
+    parser.add_argument(
+        '--chain',
+        required=True,
+        action='store',
+        nargs='?',
+        type=str,
+        help='the chain index of the structure to featurize')
+    parser.add_argument(
+        '--feature',
+        required=True,
+        action='store',
+        choices=['conf', 'interact', 'both'],
+        nargs='?',
+        help=
+        'compute collective variables related to protein conformation, protein-ligand interaction, or both'
+    )
+    parser.add_argument(
+        '--coord',
+        default='pdb',
+        action='store',
+        nargs='?',
+        type=str,
+        help=
+        'the coordinates (a single pdb file) or trajectories (e.g. trj, dcd, h5) to featurize. Default is the pdb coordinates under the given PDB code.'
+    )
+    args = parser.parse_args()
     # Do something if this file is invoked on its own
-    main()
+    main(args)
