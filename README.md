@@ -7,7 +7,7 @@ kinomodel
 
 This is a handy tool to featurize different kinase conformations as well as ligand interactions.
 
-Usage: python kinomodel.py [--pdb pdb_code] [--chain chain_id] [--feature (conf/interact/both)] [--coord (pdb/dcd)]
+Usage: `python kinomodel.py [--pdb pdb_code] [--chain chain_id] [--feature (conf/interact/both)] [--coord (pdb/dcd)]`
 
 ### Copyright
 
