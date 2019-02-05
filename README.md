@@ -6,6 +6,7 @@ kinomodel
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kinomodel/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/kinomodel/branch/master)
 
 This is a handy tool to featurize different kinase conformations as well as ligand interactions.
+
 Usage: python kinomodel.py [--pdb pdb_code] [--chain chain_id] [--feature (conf/interact/both)] [--coord (pdb/dcd)]
 
 ### Copyright
