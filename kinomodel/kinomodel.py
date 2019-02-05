@@ -7,14 +7,12 @@ Handles the primary functions
 import sys
 import argparse
 import kinase_model
-# clean traceback msgs
-sys.tracebacklimit = 0
-
 
 # main function
 def main(args):
     """
-    This is the main function for kinomodel. It takes the PDB code, chain id and certain coordinates of a kinase from a command line and returns its basic information and structural and/or interation features.
+    This is the main function for kinomodel. It takes the PDB code, chain id and certain coordinates of 
+    a kinase from a command line and returns its basic information and structural and/or interation features.
 
     Parameters
     ----------
@@ -24,8 +22,9 @@ def main(args):
     Returns
     -------
     my_kinase: a Kinase object from kinase_model
-        Contains basic information of a kinase including PDB code, chain id, kinase id, name, structure id, ligand name, the 85 pocket residues and their numbering,
-                           key dihedrals and distances that define the conformational state of a kinase, the mean distance between ligand heavy atoms and the pocket residues etc.
+        Contains basic information of a kinase including PDB code, chain id, kinase id, name, structure id, 
+        ligand name, the 85 pocket residues and their numbering, key dihedrals and distances that define 
+        the conformational state of a kinase, the mean distance between ligand heavy atoms and the pocket residues etc.
 
     """
     if args.feature == "conf":
@@ -41,8 +40,7 @@ def main(args):
             pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
     elif args.feature == "interact":
         import interact_features as inf
-        (kinase_id, name, struct_id, ligand, pocket_seq,
-         numbering) = inf.basics(args.pdb, args.chain)
+        (kinase_id, name, struct_id, ligand, pocket_seq, numbering) = inf.basics(args.pdb, args.chain)
         key_res = []
         dihedrals = []
         distances = []
@@ -99,12 +97,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         '--coord',
-        default='pdb',
+        required=True,
         action='store',
+        choices=['pdb','dcd']
         nargs='?',
         type=str,
         help=
-        'the coordinates (a single pdb file) or trajectories (e.g. trj, dcd, h5) to featurize. Default is the pdb coordinates under the given PDB code.'
+        'the coordinates (a pdb file) or trajectories (e.g. a dcd file with associated topology info) to featurize.' 
+        'Default is the pdb coordinates under the given PDB code.'
     )
     args = parser.parse_args()
     # Do something if this file is invoked on its own
