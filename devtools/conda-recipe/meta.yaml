@@ -15,6 +15,10 @@ requirements:
 
   run:
     - python
+    - openmm
+    - numpy
+    - mdtraj
+    - requests
 
 test:
   requires:
