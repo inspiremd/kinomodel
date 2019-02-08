@@ -3,22 +3,23 @@ protein_features.py
 This is a tool to featurize kinase conformational changes through the entire Kinome.
 
 """
-import logging
-import sys
-import requests
+
 import ast
-import urllib.request
-import simtk.openmm as mm
-import simtk.unit as unit
-import numpy as np
-import mdtraj as md
+import logging
 import subprocess
+import urllib.request
+
+import mdtraj as md
+import numpy as np
+import requests
+
 
 ## Setup general logging (guarantee output/error message in case of interruption)
 logger = logging.getLogger(__name__)
 logging.root.setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG, filename="kinomodel_protein.log", filemode="a+", format="%(message)s")
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 
 def basics(pdb, chain):
     """
@@ -163,9 +164,17 @@ def features(pdb, chain, coord, numbering):
     """
 
     # download the pdb structure
-    cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
-        pdb) + '.pdb'
-    subprocess.call(cmd, shell=True)
+    # cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
+    #     pdb) + '.pdb'
+    # subprocess.call(cmd, shell=True)
+    pdb_file = None
+
+    # A safer way to download files as wget may not exist on systems such MacOS
+    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdb)) as response:
+        pdb_file = response.read()
+
+    with open('{}.pdb'.format(pdb), 'w') as file:
+        file.write(pdb_file.decode())
 
     # get topology info from the structure
     topology = md.load(str(pdb) + '.pdb').topology

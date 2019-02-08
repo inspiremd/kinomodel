@@ -32,6 +32,9 @@ before_install:
 
 install:
 
+  - conda config --add channels omnia
+  - conda config --add channels conda-forge
+
     # Create test environment for package
   - conda create -n test python=$PYTHON_VER pip pytest pytest-cov
   - conda activate test

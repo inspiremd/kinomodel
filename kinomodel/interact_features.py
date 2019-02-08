@@ -1,24 +1,25 @@
-'''
+"""
 interact_features.py
 This is a tool to featurize kinase-ligand interaction through the entire Kinome.
 
-'''
-import logging
-import sys
-import requests
-import ast
-import urllib.request
-import simtk.openmm as mm
-import simtk.unit as unit
-import numpy as np
-import mdtraj as md
-import subprocess
+"""
 
-## Setup general logging (guarantee output/error message in case of interruption)
+import ast
+import logging
+import subprocess
+import sys
+import urllib.request
+
+import mdtraj as md
+import numpy as np
+import requests
+
+# Setup general logging (guarantee output/error message in case of interruption)
 logger = logging.getLogger(__name__)
 logging.root.setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG, filename="kinomodel_interaction.log", filemode="a+", format="%(message)s")
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 
 def basics(pdb, chain):
     """
@@ -74,14 +75,16 @@ def basics(pdb, chain):
                 ligand = str(structure['ligand'])
             else:
                 raise ValueError(
-                    "The PDB code you provide corresponds to an apo protein (no ligand) so the receptor-ligand interaction cannot be computed. Please double check."
+                    "The PDB code you provide corresponds to an apo protein (no ligand) so the receptor-ligand "
+                    "interaction cannot be computed. Please double check."
                 )
             found = 1
     if not found:
-        raise ValueError("No matched chain found. Please make sure you provide a capital letter (A, B, C, ...) as a chain ID.")
+        raise ValueError("No matched chain found. Please make sure you provide a "
+                         "capital letter (A, B, C, ...) as a chain ID.")
+
     # Get the numbering of the 85 pocket residues
-    cmd = "http://klifs.vu-compmedchem.nl/details.php?structure_id=" + str(
-        struct_id)
+    cmd = "http://klifs.vu-compmedchem.nl/details.php?structure_id=" + str(struct_id)
     preload = urllib.request.urlopen(cmd)
     info = urllib.request.urlopen(cmd)
     for line_number, line in enumerate(info):
@@ -137,9 +140,18 @@ def features(pdb, chain, coord, ligand, numbering):
     
     """
     # download the pdb structure
-    cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
-        pdb) + '.pdb'
-    subprocess.call(cmd, shell=True)
+    # cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
+    #     pdb) + '.pdb'
+    # subprocess.call(cmd, shell=True)
+
+    pdb_file = None
+
+    # A safer way to download files as wget may not exist on systems such MacOS
+    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdb)) as response:
+        pdb_file = response.read()
+
+    with open('{}.pdb'.format(pdb), 'w') as file:
+        file.write(pdb_file.decode())
 
     # get topology info from the structure
     topology = md.load(str(pdb) + '.pdb').topology
@@ -182,7 +194,7 @@ def features(pdb, chain, coord, ligand, numbering):
         atm_count += 1
 
     # clean array and remove empty lines
-    np.set_printoptions(threshold=np.nan)
+    np.set_printoptions(threshold=sys.maxsize)
     dis = dis[~np.all(dis == 0, axis=1)]
     # check if there is any missing coordinates;
     # if so, skip distance calculation for those residues
@@ -229,4 +241,3 @@ def features(pdb, chain, coord, ligand, numbering):
     del traj, dis
 
     return mean_dist
-

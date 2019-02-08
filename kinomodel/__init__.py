@@ -7,7 +7,6 @@ This is a handy tool to model different kinase conformations with various ligand
 # Safe to remove with Python 3-only code
 from __future__ import absolute_import
 
-# Add imports here
 from .kinomodel import *
 
 # Handle versioneer
