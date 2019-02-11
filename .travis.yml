@@ -1,7 +1,6 @@
 language: python
 
 # Run jobs on container-based infrastructure, can be overridden per job
-dist: trusty
 
 matrix:
   include:
