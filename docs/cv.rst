@@ -1,4 +1,4 @@
-.. _cvs:
+.. _cv:
 
 Collective variables
 ====================

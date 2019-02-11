@@ -34,7 +34,7 @@ Using kinomodel
    installation
    models
    features
-   cvs
+   cv
    analysis
    ml
    datasets
