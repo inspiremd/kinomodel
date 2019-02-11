@@ -10,7 +10,7 @@ DOCLINES = __doc__.split("\n")
 setup(
     # Self-descriptive entries which should always be present
     name='kinomodel',
-    author='Jiaye Guo',
+    author='The Chodera Lab',
     description=DOCLINES[0],
     long_description="\n".join(DOCLINES[2:]),
     version=versioneer.get_version(),
@@ -29,7 +29,7 @@ setup(
     # Add the kinomodel as an entry point
     entry_points={
         'console_scripts': [
-            'kinomodel = kinomodel.cli.featurize:featurize_cli',
+            'kinomodel = kinomodel.features.featurize:featurize',
         ],
     }
 

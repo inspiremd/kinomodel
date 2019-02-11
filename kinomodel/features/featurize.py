@@ -1,11 +1,9 @@
 """
-kinomodel.py
-This is a tool for kinase conformational/ligand binding featurization through the entire Kinome.
-Handles the primary functions
+Driver for featurizing models.
 
 """
 
-def featurize_cli(**kwargs):
+def _parse_arguments(**kwargs):
     """Checks whether the user has provided any arguments directly to
     the main function through the kwargs keyword, and if not, attempt
     to find them from the command line arguments using argparse.
@@ -33,8 +31,9 @@ def featurize_cli(**kwargs):
 
     arguments = None
 
+    import argparse
+
     if not kwargs:
-        import argparse
 
         # parsing command-line arguments
         parser = argparse.ArgumentParser(
@@ -92,7 +91,7 @@ def featurize_cli(**kwargs):
     return arguments
 
 # main function
-def dispatch_featurize(**kwargs):
+def featurize(**kwargs):
     """
     Compute structural and/or interaction features for a given PDB structure.
 
@@ -109,8 +108,14 @@ def dispatch_featurize(**kwargs):
         ligand name, the 85 pocket residues and their numbering, key dihedrals and distances that define
         the conformational state of a kinase, the mean distance between ligand heavy atoms and the pocket residues etc.
 
+    .. todo ::
+
+       Refactor this into a featurization driver driven by documented kwargs.
+       Think about the API from the perspective of someone wanting to assemble a program using this API.
+
     """
     from kinomodel.models import Kinase
+    from kinomodel.features.klifs import query_klifs_database
     from kinomodel.features import protein as pf
     from kinomodel.features import interaction as inf
 
@@ -119,28 +124,29 @@ def dispatch_featurize(**kwargs):
     my_kinase = None
 
     if args.feature == "conf":
-        (kinase_id, name, struct_id, pocket_seq, numbering, key_res) = pf.basics(args.pdb, args.chain)
-        ligand = 'N/A'
+        klifs = query_klifs_database(args.pdb, args.chain)
+        key_res = pf.key_klifs_residues(klifs['numbering'])
         mean_dist = 0
-        (dihedrals, distances) = pf.features(args.pdb, args.chain, args.coord, numbering)
+        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, numbering)
 
     elif args.feature == "interact":
-        (kinase_id, name, struct_id, ligand, pocket_seq, numbering) = inf.basics(args.pdb, args.chain)
+        klifs = query_klifs_database(args.pdb, args.chain)
         key_res = []
         dihedrals = []
         distances = []
-        mean_dist = inf.features(args.pdb, args.chain, args.coord, ligand, numbering)
+        mean_dist = inf.compute_simple_interaction_features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
 
     elif args.feature == "both":
-        (kinase_id, name, struct_id, ligand, pocket_seq, numbering) = inf.basics(args.pdb, args.chain)
-        (kinase_id, name, struct_id, pocket_seq, numbering, key_res) = pf.basics(args.pdb, args.chain)
-        (dihedrals, distances) = pf.features(args.pdb, args.chain, args.coord, numbering)
-        mean_dist = inf.features(args.pdb, args.chain, args.coord, ligand, numbering)
+        (kinase_id, name, struct_id, ligand, pocket_seq, numbering) = query_klifs_database(args.pdb, args.chain)
+        key_res = pf.key_klifs_residues(klifs['numbering'])
+        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs['numbering'])
+        mean_dist = inf.features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
 
     else:
         raise Exception("Unknown feature '{}'".format(args.feature))
 
-
+    # TODO: We don't want to have to pass empty things or zeros to the Kinase object.
+    # Let's reconsider what the best object model for this information is.
     my_kinase = Kinase(
         args.pdb, args.chain, kinase_id, name, struct_id, ligand,
         pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
