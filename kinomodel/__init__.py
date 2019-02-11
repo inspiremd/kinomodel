@@ -1,13 +1,6 @@
-"""
-kinomodel
-This is a handy tool to model different kinase conformations with various ligand binding poses.
-"""
-
 # Make Python 2 and 3 imports work the same
 # Safe to remove with Python 3-only code
 from __future__ import absolute_import
-
-from .kinomodel import *
 
 # Handle versioneer
 from ._version import get_versions

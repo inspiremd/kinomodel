@@ -29,7 +29,7 @@ setup(
     # Add the kinomodel as an entry point
     entry_points={
         'console_scripts': [
-            'kinomodel = kinomodel:main',
+            'kinomodel = kinomodel.cli.featurize:featurize_cli',
         ],
     }
 
