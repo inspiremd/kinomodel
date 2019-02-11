@@ -23,7 +23,7 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     chainid: str
         The chain index of the query kinase.
     coordfile: str
-        Specifies the file constaining the kinase coordinates (either a pdb file or a trajectory, i.e. trj, dcd, h5)
+        Specifies the source of coordinates ('pdb' or 'dcd')
     ligand_name: str
         Specifies the ligand name of the complex.
     resids: list of int
@@ -49,20 +49,20 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     # TODO: Since we retrieve the PDB file in multiple pieces of code, let's refactor this into one utility function
     # to avoid code duplication.
     import urllib
-    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdb)) as response:
+    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdbid)) as response:
         pdb_file = response.read()
 
     # TODO: Use "with tempfile.TemporaryDirectory" context manager idiom to store temporary files instead
-    with open('{}.pdb'.format(pdb), 'w') as file:
+    with open('{}.pdb'.format(pdbid), 'w') as file:
         file.write(pdb_file.decode())
 
     # get topology info from the structure
-    topology = md.load(str(pdb) + '.pdb').topology
+    topology = md.load(str(pdbid) + '.pdb').topology
     table, bonds = topology.to_dataframe()
     atoms = table.values
     # translate a letter chain id into a number index (A->0, B->1 etc)
     # TODO: This may not be robust, since chains aren't always in sequence from A to Z
-    chain_index = ord(str(chain).lower()) - 97
+    chain_index = ord(str(chainid).lower()) - 97
 
     #np.set_printoptions(threshold=np.nan)
     #print (atoms)
@@ -83,7 +83,7 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
         if (line[5] == chain_index) and (line[3] in resids) and (line[1] == 'CA'):
             pocket_atm.append(int(line[0]))
         # start of ligand
-        if line[4] == ligand:
+        if line[4] == ligand_name:
             # check whether the pocket_atm list is complete
             if (len(pocket_atm) < 85) and (0 in resids):
                 pocket_atm.insert(resids.index(0), 0)
@@ -127,10 +127,10 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
         )
 
     # calculate the distances for the user-specifed structure (a static structure or an MD trajectory)
-    if coord == 'pdb':
-        traj = md.load(str(pdb) + '.pdb')
-    elif coord == 'dcd':
-        traj = md.load(str(pdb) + '.dcd',top = str(pdb) + '_fixed_solvated.pdb')
+    if coordfile == 'pdb':
+        traj = md.load(str(pdbid) + '.pdb')
+    elif coordfile == 'dcd':
+        traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
     mean_dist = []
     for frame in md.compute_distances(traj, dis):
         mean_dist.append(np.mean(frame))

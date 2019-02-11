@@ -89,6 +89,8 @@ class KinomodelTestCase(unittest.TestCase):
             [])
 
     def test_features(self):
+        from kinomodel.features import featurize
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
         self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='3PP0')
         self.assertEqual(self.kinase.dihedrals,
@@ -97,7 +99,7 @@ class KinomodelTestCase(unittest.TestCase):
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.3685706)  # mean ligand-pocket distance
 
         # example 2: a kinase with gap(s) in the binding pocket residues
@@ -108,7 +110,7 @@ class KinomodelTestCase(unittest.TestCase):
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.4236906)  # mean ligand-pocket distance
 
         # example 3: a kinase with multiple occupancy
@@ -119,5 +121,5 @@ class KinomodelTestCase(unittest.TestCase):
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.6548363)  # mean ligand-pocket distance
