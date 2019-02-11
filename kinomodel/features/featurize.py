@@ -117,7 +117,7 @@ def featurize(**kwargs):
     from kinomodel.models import Kinase
     from kinomodel.features.klifs import query_klifs_database
     from kinomodel.features import protein as pf
-    from kinomodel.features import interaction as inf
+    from kinomodel.features import interactions as inf
 
     args = _parse_arguments(**kwargs)
 
@@ -127,7 +127,7 @@ def featurize(**kwargs):
         klifs = query_klifs_database(args.pdb, args.chain)
         key_res = pf.key_klifs_residues(klifs['numbering'])
         mean_dist = 0
-        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, numbering)
+        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs['numbering'])
 
     elif args.feature == "interact":
         klifs = query_klifs_database(args.pdb, args.chain)
@@ -137,7 +137,7 @@ def featurize(**kwargs):
         mean_dist = inf.compute_simple_interaction_features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
 
     elif args.feature == "both":
-        (kinase_id, name, struct_id, ligand, pocket_seq, numbering) = query_klifs_database(args.pdb, args.chain)
+        klifs = query_klifs_database(args.pdb, args.chain)
         key_res = pf.key_klifs_residues(klifs['numbering'])
         (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs['numbering'])
         mean_dist = inf.features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
@@ -148,7 +148,7 @@ def featurize(**kwargs):
     # TODO: We don't want to have to pass empty things or zeros to the Kinase object.
     # Let's reconsider what the best object model for this information is.
     my_kinase = Kinase(
-        args.pdb, args.chain, kinase_id, name, struct_id, ligand,
-        pocket_seq, numbering, key_res, dihedrals, distances, mean_dist)
+        args.pdb, args.chain, klifs['kinase_id'], klifs['name'], klifs['struct_id'], klifs['ligand'],
+        klifs['pocket_seq'], klifs['numbering'], key_res, dihedrals, distances, mean_dist)
 
     return my_kinase

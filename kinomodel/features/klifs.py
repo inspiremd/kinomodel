@@ -9,8 +9,8 @@ http://klifs.vu-compmedchem.nl/
 # TODO: Can we log to the terminal instead?
 import logging
 logger = logging.getLogger(__name__)
-logging.root.setLevel(logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+logging.root.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def query_klifs_database(pdbid, chainid):

@@ -4,7 +4,6 @@ Defines the Kinase class
 
 """
 
-
 class Kinase(object):
 
     def __init__(self, pdb, chain, kinase_id, name, struct_id, ligand, pocket_seq,

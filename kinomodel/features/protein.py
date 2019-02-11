@@ -4,17 +4,12 @@ This is a tool to featurize kinase conformational changes through the entire Kin
 
 """
 
-import subprocess
-
-import mdtraj as md
-import numpy as np
-
 # Setup general logging (guarantee output/error message in case of interruption)
 # TODO: Can we log to the terminal instead?
 import logging
 logger = logging.getLogger(__name__)
-logging.root.setLevel(logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+logging.root.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
@@ -104,6 +99,8 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
 
 
     """
+    import mdtraj as md
+    import numpy as np
 
     pdb_file = None
 
@@ -279,6 +276,7 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
 
     # clean up
     # TODO: This is dangerous! Instead, rely on using the "with tempfile.TemporaryDirectory" context manager idiom to create and clean up temporary directories
+    #import subprocess
     #rm_file = 'rm ./' + str(pdb) + '.pdb*'
     #rm_file = 'rm ./' + str(pdb) + '.pdb*'
     #subprocess.call(rm_file, shell=True)

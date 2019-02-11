@@ -20,12 +20,17 @@ class KinomodelTestCase(unittest.TestCase):
 
     def test_basics(self):
         from kinomodel.features import featurize
+
+        # example 0: a kinase with no ligand
+        self.kinase = featurize(pdb='2G1T', chain='A', feature='conf', coord='pdb')
+        self.assertEqual(self.kinase.ligand, None)
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
         self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3PP0')
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 4820)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, '03Q')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKVLEILDEAYVMAGVGPYVSRLLGIQLVTQLMPYGCLLDHVREYLEDVRLVHRDLAARNVLVITDFGLA'
@@ -48,7 +53,7 @@ class KinomodelTestCase(unittest.TestCase):
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 9325)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, '03P')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKVLEILDEAYVMAGVGPYVSRLLGIQLVTQLMPYGCLLDHVREYLEDVRLVHRDLAARNVLVITDFGL_'
@@ -71,7 +76,7 @@ class KinomodelTestCase(unittest.TestCase):
         self.assertEqual(self.kinase.kinase_id, 406)
         self.assertEqual(self.kinase.name, 'EGFR')
         self.assertEqual(self.kinase.struct_id, 873)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, 'AQ4')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKELEILDEAYVMASVDPHVCRLLGIQLITQLMPFGCLLDYVREYLEDRRLVHRDLAARNVLVITDFGLA'
@@ -90,6 +95,8 @@ class KinomodelTestCase(unittest.TestCase):
             [735, 743, 804, 806, 721, 738, 742, 832, 830, 831, 841, 782])
 
     def test_features(self):
+        from kinomodel.features import featurize
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
         self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3PP0')
         self.assertEqual(
