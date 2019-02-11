@@ -23,7 +23,7 @@ setup(
     # Optional include package data to ship with your package
     # Comment out this line to prevent the files from being packaged with your software
     # Extend/modify the list to include/exclude other items as need be
-    package_data={'kinomodel': ["data/*.dat"]
+    package_data={'kinomodel': ["data/*"]
                   },
 
     # Add the kinomodel as an entry point
