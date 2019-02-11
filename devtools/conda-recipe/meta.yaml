@@ -27,5 +27,6 @@ test:
     - kinomodel
 
 about:
-  home: add_url_here
-  license: MIT License
+  home: http://github.com/inspiremd/kinomodel
+  license: MIT
+  license_file: LICENSE
