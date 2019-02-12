@@ -4,101 +4,37 @@ This is a tool to featurize kinase conformational changes through the entire Kin
 
 """
 
-import ast
+# Setup general logging (guarantee output/error message in case of interruption)
+# TODO: Can we log to the terminal instead?
 import logging
-import subprocess
-import urllib.request
-
-import mdtraj as md
-import numpy as np
-import requests
-
-
-## Setup general logging (guarantee output/error message in case of interruption)
 logger = logging.getLogger(__name__)
-logging.root.setLevel(logging.DEBUG)
-logging.basicConfig(level=logging.DEBUG, filename="kinomodel_protein.log", filemode="a+", format="%(message)s")
+logging.root.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def basics(pdb, chain):
+def key_klifs_residues(numbering):
     """
-    This function takes the PDB code and chain id of a kinase from a command line and returns its basic information.
-    
+    Retrieve a list of PDB residue indices relevant to key kinase conformations mapped via KLIFS.
+
+    Define indices of the residues relevant to a list of 12 collective variables relevant to
+    kinase conformational changes. These variables include: angle between aC and aE helices,
+    the key K-E salt bridge, DFG-Phe conformation (two distances), X-DFG-Phi, X-DFG-Psi,
+    DFG-Asp-Phi, DFG-Asp-Psi, DFG-Phe-Phi, DFG-Phe-Psi, DFG-Phe-Chi1, and the FRET L-S distance.
+    All features are under the current numbering of the structure provided.
+
     Parameters
     ----------
-    pdb: str
-        The PDB code of the inquiry kinase.
-    chain: str
-        The chain index of the inquiry kinase.
+    numbering : list of int
+        numbering[klifs_index] is the residue number for the given PDB file corresponding to KLIFS residue index 'klifs_index'
 
     Returns
     -------
-    kinase_id: int
-        The standard ID of a kinase enforced by the KLIFS database.
-    name: str
-        The standard name of the kinase used by the KLIFS database.
-    pocket_seq: str
-        The 85 discontinuous residues (from multisequence alignment) that define the binding pocket of a kinase.
-    struct_id: int
-        The ID associated with a specific chain in the pdb structure of a kinase.
-    numbering: list of int
-        The residue indices of the 85 pocket residues specific to the structure.
-    key_res: list of int
-        A list of residue indices that are relevant to the collective variables.
-    
+    key_res : list of int
+        Key residue indices
+
     """
 
-
-    # get information of the query kinase from the KLIFS database and gives values of 
-    # kinase_id, name and pocket_seq (numbering)
-    url = "http://klifs.vu-compmedchem.nl/api/structures_pdb_list?pdb-codes=" + str(pdb)
-
-    # check to make to sure the search returns valid info
-    # if return is empty
-    if len(requests.get(url).text) == 0:
-        raise ValueError("No matched pdb structure found in KLIFS. Please make sure to provide a valid PDB code.")
-    else:
-        # clean up the info from KLIFS
-        clean = requests.get(url).text.replace('true', 'True').replace('false', 'False')
-    # each pdb code corresponds to multiple structures
-    found = 0
-    for structure in ast.literal_eval(clean):
-        # find the specific chain
-        if structure['chain'] == str(chain):
-            kinase_id = int(structure['kinase_ID'])
-            name = str(structure['kinase'])
-            pocket_seq = str(structure['pocket'])
-            struct_id = int(structure['structure_ID'])
-            found = 1
-    if not found:
-        raise ValueError("No matched chain found. Please make sure you provide a capital letter (A, B, C, ...) as a chain ID.")
-    # Get the numbering of the 85 pocket residues
-    cmd = "http://klifs.vu-compmedchem.nl/details.php?structure_id=" + str(
-        struct_id)
-    preload = urllib.request.urlopen(cmd)
-    info = urllib.request.urlopen(cmd)
-    for line_number, line in enumerate(info):
-        line = line.decode().replace('_', '')
-        if 'pocketResidues=[' in line:
-            numbering = ast.literal_eval(
-                (line[line.find('=') + 1:line.find(';')]))
-            break
-    # check if there is gaps/missing residues among the pocket residues. 
-    # If so, enforce their indices as 0 and avoid using them to compute collective variables.
-    for i in range(len(numbering)):
-        if numbering[i] == -1:
-            logging.info(
-                "Warning: There is a gap/missing residue at position: " +
-                str(i + 1) +
-                ". Its index will be enforced as 0 and it will not be used to compute collective variables.")
-            numbering[i] = 0
-
-    # define indices of the residues relevant to a list of 12 collective variables relevant to 
-    # kinase conformational changes. These variables include: angle between aC and aE helices, 
-    # the key K-E salt bridge, DFG-Phe conformation (two distances), X-DFG-Phi, X-DFG-Psi, 
-    # DFG-Asp-Phi, DFG-Asp-Psi, DFG-Phe-Phi, DFG-Phe-Psi, DFG-Phe-Chi1, and the FRET L-S distance. 
-    # All features are under the current numbering of the structure provided.
     key_res = []
     # angle between aC and aE helices
     key_res.append(numbering[20])  # residue 21 (res1 in aC)
@@ -127,32 +63,23 @@ def basics(pdb, chain):
     # not in the list of 85 (equivalent to Aura"L225"), use the 100% conserved beta III K as a reference
     key_res.append(numbering[16] + 61)
 
-    # print out kinase information
-    logging.info("Kinase ID: " + str(kinase_id))
-    logging.info("Kinase name: " + str(name))
-    logging.info("Pocket residues: " + str(pocket_seq))
-    logging.info("Structure ID: " + str(struct_id))
-    logging.info("Numbering of the 85 pocket residues: " + str(numbering))
-    logging.info("Residues involved in collective variables: " + str(key_res))
+    return key_res
 
-    return kinase_id, name, struct_id, pocket_seq, numbering, key_res
-
-
-def features(pdb, chain, coord, numbering):
+def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
     """
-    This function takes the PDB code, chain id and certain coordinates of a kinase from 
+    This function takes the PDB code, chain id and certain coordinates of a kinase from
     a command line and returns its structural features.
-    
+
     Parameters
     ----------
-    pdb: str
+    pdbid : str
         The PDB code of the inquiry kinase.
-    chain: str
+    chainid : str
         The chain index of the inquiry kinase.
-    coord: str
+    coordfile : str
         Specifies the file constaining the kinase coordinates (either a pdb file or a trajectory, i.e. trj, dcd, h5)
-    numbering: list of int
-        The residue indices of the 85 pocket residues specific to the structure.    
+    numbering : list of int
+        The residue indices of the 85 pocket residues specific to the structure.
 
     Returns
     -------
@@ -160,28 +87,41 @@ def features(pdb, chain, coord, numbering):
         A list (one frame) or lists (multiple frames) of dihedrals relevant to kinase conformation.
     distances: list of floats
         A list (one frame) or lists (multiple frames) of intramolecular distances relevant to kinase conformation.
-    
-    """
 
-    # download the pdb structure
-    # cmd = 'wget -q http://www.pdb.org/pdb/files/' + str(
-    #     pdb) + '.pdb'
-    # subprocess.call(cmd, shell=True)
+    .. todo ::
+
+       Instead of featurizing on dihedrals (which are discontinuous), it's often better to use sin() and cos()
+       of the dihedrals or some other non-discontinuous representation.
+
+    .. todo :: Instead of a PDB file or a trj/dcd/h5, accept an MDTraj.Trajectory---this will be much more flexible.
+
+    .. todo :: Use kwargs with sensible defaults instead of relying only on positional arguments.
+
+
+    """
+    import mdtraj as md
+    import numpy as np
+
     pdb_file = None
 
     # A safer way to download files as wget may not exist on systems such MacOS
-    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdb)) as response:
+    # TODO: Since we retrieve the PDB file in multiple pieces of code, let's refactor this into one utility function
+    # to avoid code duplication.
+    import urllib
+    with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdbid)) as response:
         pdb_file = response.read()
 
-    with open('{}.pdb'.format(pdb), 'w') as file:
+    # TODO: Use "with tempfile.TemporaryDirectory" context manager idiom to store temporary files instead
+    with open('{}.pdb'.format(pdbid), 'w') as file:
         file.write(pdb_file.decode())
 
     # get topology info from the structure
-    topology = md.load(str(pdb) + '.pdb').topology
+    topology = md.load(str(pdbid) + '.pdb').topology
     table, bonds = topology.to_dataframe()
     atoms = table.values
     # translate a letter chain id into a number index (A->0, B->1 etc)
-    chain_index = ord(str(chain).lower()) - 97
+    # TODO: This may not be robust, since chains aren't always in sequence from A to Z
+    chain_index = ord(str(chainid).lower()) - 97
 
     # get the array of atom indices for the calculation of:
     #       * eight dihedrals (a 8*4 array where each row contains indices of the four atoms for each dihedral)
@@ -198,14 +138,17 @@ def features(pdb, chain, coord, numbering):
 
     # parse the topology info
     '''
-    The coordinates are located by row number (usually is atom index minus one, which is also why it's zero-based) 
-    by mdtraj but when the atom indices are not continuous there is a problem so a safer way to locate the coordinates 
+    The coordinates are located by row number (usually is atom index minus one, which is also why it's zero-based)
+    by mdtraj but when the atom indices are not continuous there is a problem so a safer way to locate the coordinates
     is through row number (as a fake atom index) in case the atom indices are not continuous.
     '''
     count = 0  # keep track of row indices as "atom indices"
     for line in atoms:
         # for the specified chain
         if line[5] == chain_index:
+            # TODO: Use MDTraj DSL instead of this cumbersome comparison scheme.
+            # http://mdtraj.org/latest/atom_selection.html
+
             # dihedral 1: between aC and aE helices
             dih[0][0] = count if line[3] == numbering[20] and line[
                 1] == 'CA' else dih[0][0]
@@ -317,10 +260,10 @@ def features(pdb, chain, coord, numbering):
             "There is no missing coordinates.  All dihedrals and distances will be computed."
         )
     # calculate the dihedrals and distances for the user-specifed structure (a static structure or an MD trajectory)
-    if coord == 'pdb':
-        traj = md.load(str(pdb) + '.pdb')
-    elif coord == 'dcd':
-        traj = md.load(str(pdb) + '.dcd',top = str(pdb) + '_fixed_solvated.pdb')
+    if coordfile == 'pdb':
+        traj = md.load(str(pdbid) + '.pdb')
+    elif coordfile == 'dcd':
+        traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
     dihedrals = md.compute_dihedrals(traj, dih)
     distances = md.compute_distances(traj, dis)
     logging.info("Key dihedrals relevant to kinase conformation are as follows:")
@@ -332,9 +275,12 @@ def features(pdb, chain, coord, numbering):
     logging.info(distances)
 
     # clean up
-    rm_file = 'rm ./' + str(pdb) + '.pdb*'
-    subprocess.call(rm_file, shell=True)
+    # TODO: This is dangerous! Instead, rely on using the "with tempfile.TemporaryDirectory" context manager idiom to create and clean up temporary directories
+    #import subprocess
+    #rm_file = 'rm ./' + str(pdb) + '.pdb*'
+    #rm_file = 'rm ./' + str(pdb) + '.pdb*'
+    #subprocess.call(rm_file, shell=True)
+
     del traj, dih, dis
 
     return dihedrals, distances
-

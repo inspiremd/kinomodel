@@ -3,15 +3,8 @@ Unit and regression test for the kinomodel package.
 """
 
 # Import package, test suite, and other packages as needed
-import kinomodel as ki
 import unittest
-import sys
-import argparse as ap
 import numpy as np
-
-# clean traceback msgs
-sys.tracebacklimit = 0
-
 
 class KinomodelTestCase(unittest.TestCase):
 
@@ -20,17 +13,24 @@ class KinomodelTestCase(unittest.TestCase):
     #self.assertTrue("kinomodel" in sys.modules)
 
     def test_command(self):
+        from kinomodel.features import featurize
         # make sure the input command line is expected
         with self.assertRaises(ValueError):
-            ki.main(chain=0, coord='pdb', feature='conf', pdb='3PP0')
+            featurize(chain=0, coord='pdb', feature='conf', pdb='3PP0')
 
     def test_basics(self):
+        from kinomodel.features import featurize
+
+        # example 0: a kinase with no ligand
+        self.kinase = featurize(pdb='2G1T', chain='A', feature='conf', coord='pdb')
+        self.assertEqual(self.kinase.ligand, None)
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='3PP0')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3PP0')
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 4820)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, '03Q')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKVLEILDEAYVMAGVGPYVSRLLGIQLVTQLMPYGCLLDHVREYLEDVRLVHRDLAARNVLVITDFGLA'
@@ -49,11 +49,11 @@ class KinomodelTestCase(unittest.TestCase):
             [767, 775, 836, 838, 753, 770, 774, 864, 862, 863, 873, 814])
 
         # example 2: a kinase with gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='3RCD')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3RCD')
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 9325)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, '03P')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKVLEILDEAYVMAGVGPYVSRLLGIQLVTQLMPYGCLLDHVREYLEDVRLVHRDLAARNVLVITDFGL_'
@@ -72,11 +72,11 @@ class KinomodelTestCase(unittest.TestCase):
             [767, 775, 836, 838, 753, 770, 774, 864, 862, 863, 873, 814])
 
         # example 3: a kinase with multiple occupancy
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='1M17')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='1M17')
         self.assertEqual(self.kinase.kinase_id, 406)
         self.assertEqual(self.kinase.name, 'EGFR')
         self.assertEqual(self.kinase.struct_id, 873)
-        self.assertEqual(self.kinase.ligand, 'N/A')
+        self.assertEqual(self.kinase.ligand, 'AQ4')
         self.assertEqual(
             self.kinase.pocket_seq,
             'KVLGSGAFGTVYKVAIKELEILDEAYVMASVDPHVCRLLGIQLITQLMPFGCLLDYVREYLEDRRLVHRDLAARNVLVITDFGLA'
@@ -95,8 +95,10 @@ class KinomodelTestCase(unittest.TestCase):
             [735, 743, 804, 806, 721, 738, 742, 832, 830, 831, 841, 782])
 
     def test_features(self):
+        from kinomodel.features import featurize
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='3PP0')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3PP0')
         self.assertEqual(
             round(
                 np.asscalar(self.kinase.dihedrals[0][0]), 7),
@@ -105,9 +107,9 @@ class KinomodelTestCase(unittest.TestCase):
             round(
                 np.asscalar(self.kinase.distances[0][0]), 7),
             0.7770488)  # the first distance value
-        
+
         # example 2: a kinase with gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='3RCD')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='3RCD')
         self.assertEqual(
             round(
                 np.asscalar(self.kinase.dihedrals[0][0]), 7),
@@ -118,7 +120,7 @@ class KinomodelTestCase(unittest.TestCase):
             1.0546854)  # the first distance value
 
         # example 3: a kinase with multiple occupancy
-        self.kinase = ki.main(chain='A', coord='pdb', feature='conf', pdb='1M17')
+        self.kinase = featurize(chain='A', coord='pdb', feature='conf', pdb='1M17')
         self.assertEqual(
             round(
                 np.asscalar(self.kinase.dihedrals[0][0]), 7),
@@ -127,7 +129,3 @@ class KinomodelTestCase(unittest.TestCase):
             round(
                 np.asscalar(self.kinase.distances[0][0]), 7),
             0.3558538)  # the first distance value
-
-
-if __name__ == '__main__':
-    unittest.main()

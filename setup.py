@@ -2,7 +2,7 @@
 kinomodel
 This is a handy tool to model different kinase conformations with various ligand binding poses.
 """
-from setuptools import setup
+from setuptools import setup, find_packages
 import versioneer
 
 DOCLINES = __doc__.split("\n")
@@ -10,7 +10,7 @@ DOCLINES = __doc__.split("\n")
 setup(
     # Self-descriptive entries which should always be present
     name='kinomodel',
-    author='Jiaye Guo',
+    author='The Chodera Lab',
     description=DOCLINES[0],
     long_description="\n".join(DOCLINES[2:]),
     version=versioneer.get_version(),
@@ -18,18 +18,18 @@ setup(
     license='MIT',
 
     # Which Python importable modules should be included when your package is installed
-    packages=['kinomodel', "kinomodel.tests"],
+    packages=find_packages(),
 
     # Optional include package data to ship with your package
     # Comment out this line to prevent the files from being packaged with your software
     # Extend/modify the list to include/exclude other items as need be
-    package_data={'kinomodel': ["data/*.dat"]
+    package_data={'kinomodel': ["data/*"]
                   },
 
     # Add the kinomodel as an entry point
     entry_points={
         'console_scripts': [
-            'kinomodel = kinomodel:main',
+            'kinomodel = kinomodel.features.featurize:featurize',
         ],
     }
 

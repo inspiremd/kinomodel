@@ -19,9 +19,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'This is a handy tool to model different kinase conformations with various ligand binding poses.'
-copyright = "2018, Jiaye Guo"
-author = 'Jiaye Guo'
+project = 'A toolkit for kinase modeling using physical models and machine learning'
+copyright = "2018-2019, The Chodera lab, Memorial Sloan Kettering Cancer Center"
+author = 'Jiaye Guo, John D. Chodera'
 
 # The short X.Y version
 version = ''
@@ -38,10 +38,22 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.mathjax',
-]
+#extensions = [
+#    'sphinx.ext.autodoc',
+#    'sphinx.ext.mathjax',
+#]
+
+# Add any Sphinx extension module names here, as strings. They can be extensions
+# coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+extensions = ['sphinx.ext.mathjax', 'sphinx.ext.ifconfig', 'sphinx.ext.autosummary',
+              'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.viewcode',
+              'numpydoc', 'sphinx.ext.todo']
+
+autosummary_generate = True
+autodoc_default_flags = ['members', 'inherited-members']
+# Disable NumPy style attributes/methods expecting every method to have its own docs page
+numpydoc_class_members_toctree = False
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

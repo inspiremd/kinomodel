@@ -3,15 +3,8 @@ Unit and regression test for the kinomodel package.
 """
 
 # Import package, test suite, and other packages as needed
-import kinomodel as ki
 import unittest
-import sys
-import argparse as ap
 import numpy as np
-
-# clean traceback msgs
-sys.tracebacklimit = 0
-
 
 class KinomodelTestCase(unittest.TestCase):
 
@@ -21,12 +14,14 @@ class KinomodelTestCase(unittest.TestCase):
 
     def test_command(self):
         # make sure the input command line is expected
+        from kinomodel.features import featurize
         with self.assertRaises(ValueError):
-            ki.main(chain=0, coord='pdb', feature='interact', pdb='3PP0')
+            featurize(chain=0, coord='pdb', feature='interact', pdb='3PP0')
 
     def test_basics(self):
         # example 1: a kinase with no gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='3PP0')
+        from kinomodel.features import featurize
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='3PP0')
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 4820)
@@ -48,7 +43,7 @@ class KinomodelTestCase(unittest.TestCase):
             self.kinase.key_res,
             [])
         # example 2: a kinase with gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='3RCD')
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='3RCD')
         self.assertEqual(self.kinase.kinase_id, 407)
         self.assertEqual(self.kinase.name, 'ErbB2')
         self.assertEqual(self.kinase.struct_id, 9325)
@@ -71,7 +66,7 @@ class KinomodelTestCase(unittest.TestCase):
             [])
 
         # example 3: a kinase with multiple occupancy
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='1M17')
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='1M17')
         self.assertEqual(self.kinase.kinase_id, 406)
         self.assertEqual(self.kinase.name, 'EGFR')
         self.assertEqual(self.kinase.struct_id, 873)
@@ -94,39 +89,37 @@ class KinomodelTestCase(unittest.TestCase):
             [])
 
     def test_features(self):
+        from kinomodel.features import featurize
+
         # example 1: a kinase with no gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='3PP0')
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='3PP0')
         self.assertEqual(self.kinase.dihedrals,
             [])  # the first dihedral value
         self.assertEqual(self.kinase.distances,
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.3685706)  # mean ligand-pocket distance
- 
+
         # example 2: a kinase with gap(s) in the binding pocket residues
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='3RCD')
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='3RCD')
         self.assertEqual(self.kinase.dihedrals,
             [])  # the first dihedral value
         self.assertEqual(self.kinase.distances,
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.4236906)  # mean ligand-pocket distance
-        
+
         # example 3: a kinase with multiple occupancy
-        self.kinase = ki.main(chain='A', coord='pdb', feature='interact', pdb='1M17')
+        self.kinase = featurize(chain='A', coord='pdb', feature='interact', pdb='1M17')
         self.assertEqual(self.kinase.dihedrals,
             [])  # the first dihedral value
         self.assertEqual(self.kinase.distances,
             [])  # the first distance value
         self.assertEqual(
             round(
-                np.asscalar(self.kinase.mean_dist), 7),
+                np.asscalar(self.kinase.mean_dist[0]), 7),
             1.6548363)  # mean ligand-pocket distance
-
-
-if __name__ == '__main__':
-    unittest.main()

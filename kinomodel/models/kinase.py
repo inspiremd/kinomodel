@@ -4,7 +4,6 @@ Defines the Kinase class
 
 """
 
-
 class Kinase(object):
 
     def __init__(self, pdb, chain, kinase_id, name, struct_id, ligand, pocket_seq,
@@ -39,6 +38,13 @@ class Kinase(object):
         mean_dist: float
             A float (one frame) or a list of floats (multiple frames), which is the mean pairwise distance between
             ligand heavy atoms and the CAs of the 85 pocket residues.
+
+        .. todo ::
+
+           This is WAY too many positional arguments. Can we use kwargs instead, or somehow simplify the positional arguments into logical groups?
+           Many of these will be optional if we want to represent aspects of a structure, so there's no need to make them all requiredself.
+           Also, we will likely not want to mix features (distances, dihedrals) with structural information directly.
+
         """
 
         self.pdb = pdb
