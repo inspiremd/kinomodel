@@ -10,4 +10,26 @@ Featurization tools
     :nosignatures:
     :toctree: api/generated/
 
-    ClassName
+    featurize
+
+.. currentmodule:: openmmtools.features.interactions
+.. autosummary::
+    :nosignatures:
+    :toctree: api/generated/
+
+    query_klifs_database
+
+.. currentmodule:: openmmtools.features.interactions
+.. autosummary::
+    :nosignatures:
+    :toctree: api/generated/
+
+    compute_simple_interaction_features
+
+.. currentmodule:: openmmtools.features.interactions
+.. autosummary::
+    :nosignatures:
+    :toctree: api/generated/
+
+    key_klifs_residues
+    compute_simple_protein_features
