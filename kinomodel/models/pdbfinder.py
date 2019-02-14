@@ -48,7 +48,7 @@ def write_file(filename, contents):
         outfile.write(contents)
 
 
-def gen_query(search_ligand, search_protein=None, querymode=query_mode):
+def gen_query(search_ligand, search_protein=None, querymode=None):
     """
     Args:
         search_ligand: the Chem_ID of the FDA-approved inhibitor of interest
@@ -167,7 +167,7 @@ def search(scan_params):
     return idlist
 
 
-def clean_pdb(list_pdb_ids, querymode=query_mode):
+def clean_pdb(list_pdb_ids, querymode=None):
     """Cleans up the string returned by search()
 
     Args:
@@ -291,7 +291,7 @@ def download_pdb(pdbid, file_pathway):
     write_file(os.path.join(file_pathway, '%s.pdb' % pdbid), pdb)
 
 
-def ligand_search_mode(inhibitor_list, ligname, pH, fixpdb):
+def ligand_search_mode(inhibitor_list, ligname, pH, fixpdb, query_mode=None):
     pdb_list = []
     pathway = 'pdbs/%s' % ligname
     for id in inhibitor_list:
@@ -450,7 +450,7 @@ def pdbfinder_cli():
     # Query mode Lig searches for all PDBs with a given FDA-approved kinase inhibitors in them
     if query_mode == 'Lig':
         chem_id_list = make_chem_id_list(main_dictionary, ligand)
-        ligand_search_mode(chem_id_list, ligand, ph, fix)
+        ligand_search_mode(chem_id_list, ligand, ph, fix, query_mode=query_mode)
 
     # Query Mode LigAndTarget searches for all inhibitor:approved target PDB files
     elif query_mode == 'LigAndTarget':
