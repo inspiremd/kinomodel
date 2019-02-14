@@ -1,0 +1,15 @@
+name: kinomodel
+channels:
+    - omnia
+    - conda-forge
+    - rdkit
+dependencies:
+    - python ==3.6
+    - numpy
+    - setuptools
+    - numpydoc
+    - openmm
+    - requests
+    - pdbfixer
+    - pypdb
+    - xmltodict
