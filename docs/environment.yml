@@ -11,5 +11,5 @@ dependencies:
     - openmm
     - requests
     - pdbfixer
-    - pypdb
+    #- pypdb
     - xmltodict

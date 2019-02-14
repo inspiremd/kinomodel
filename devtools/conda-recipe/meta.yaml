@@ -19,7 +19,7 @@ requirements:
     - numpy
     - requests
     - pdbfixer
-    - pypdb
+    #- pypdb # TODO: Build this for omnia or conda-forge
     - xmltodict
 
 test:
