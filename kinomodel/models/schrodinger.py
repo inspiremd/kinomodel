@@ -11,15 +11,7 @@ Written by Steven Albanese, with gratuitious borrowing from Openmoltools' Schrod
 #     Import    #
 #################
 
-from openmoltools import utils
-from openmoltools import schrodinger
-import os
-import sys
-import logging
-import shutil
-import csv
-import subprocess
-import mdtraj
+import os, sys
 from openmoltools.schrodinger import need_schrodinger
 
 def write_file(filename, contents):
@@ -72,6 +64,7 @@ def protein_prep(input_file_path, output_file_path, pdbid, pH=7.4, fillsidechain
     cmd.append(input_file_path)
     cmd.append(output_file_name)
 
+    from openmoltools import units, schrodinger
     with utils.temporary_cd(output_dir):
         log = schrodinger.run_and_log_error(cmd)
         write_file('%s.log' % pdbid, log)
