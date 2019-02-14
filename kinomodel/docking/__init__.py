@@ -8,6 +8,7 @@ This is a handy tool to dock various compatible ligands to any given kinase mode
 from __future__ import absolute_import
 
 from .docking import *
+from .hybrid import *
 
 # Handle versioneer
 from ._version import get_versions

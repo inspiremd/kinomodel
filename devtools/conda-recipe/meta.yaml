@@ -19,6 +19,9 @@ requirements:
     - numpy
     - mdtraj
     - requests
+    - pdbfixer
+    - pypdb
+    - xmltodict
 
 test:
   requires:

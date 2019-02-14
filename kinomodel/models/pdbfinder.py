@@ -4,49 +4,8 @@
 #        are based on (but very much altered from) the code in that repo
 
 ##################################################
-import csv
-import argparse
-import xmltodict
-import urllib
-import urllib.request
 import warnings
-from pdbfixer import PDBFixer
-from simtk.openmm.app import PDBFile
 import os
-from natsort import natsorted
-import pypdb
-import protprep
-
-#################################################
-
-parser = argparse.ArgumentParser(description="Automated script to search PDB by chemical ID")
-parser.add_argument('-l', required=False, dest='lig', default='None',
-                    help='The ligand that you want all PDBS for. Specify when using Lig or LigAndTarget modes')
-
-parser.add_argument('--mode', required=False, default='LigAll', dest='mode',
-                    help='What mode query would you like to make. Currently implemented modes are Lig, LigAndTarget, LigAll and Apo modes')
-
-parser.add_argument('--fix', required=False, action='store_true', dest='fix',
-                    help='Setting flag fixes problems with the PDB')
-
-parser.add_argument('--ph', required=False, default=7.4, type=float, dest='ph',
-                    help='Use to set pH to something other than 7.0')
-
-parser.add_argument('--renumber', required=False, action='store_false', dest='keepNumbers',
-                    help='Set flag to renumber PDB and not use original numbering')
-
-parser.add_argument('--biological_unit', required=False, action='store_true', dest='biological_unit',
-                    help='Set flag to retrieve biological unit for all structures')
-
-args = parser.parse_args()
-
-ligand = args.lig
-query_mode = args.mode
-fix = args.fix
-ph = args.ph
-keepNumbers = args.keepNumbers
-bunit = args.biological_unit
-
 
 #########################################
 #        Helper Functions               #
@@ -61,6 +20,7 @@ def get_pdb_biological_unit(pdb_id):
     Returns: a string with the full PDB file in it
 
     """
+    import urllib
 
     fullurl = 'https://files.rcsb.org/download/' + pdb_id + '.pdb1'
     req = urllib.request.Request(fullurl)
@@ -98,6 +58,7 @@ def gen_query(search_ligand, search_protein=None, querymode=query_mode):
     Returns: xml parsed dictionary to be used with pypdb.do_search
 
     """
+    import xmltodict
 
     if querymode == 'Lig':
         xml = """
@@ -186,6 +147,8 @@ def search(scan_params):
     Returns: list of pdbs that should be cleaned up using clean_pdb function
 
     """
+    import urllib
+    import xmltodict
 
     url = 'http://www.rcsb.org/pdb/rest/search'
 
@@ -243,6 +206,7 @@ def pdb_fix_pdbfixer(pdbid, file_pathway, ph, chains_to_remove):
     print(pdbid)
 
     # Download the topology from rcsb based on pdbod
+    from pdbfixer import PDBFixer
     fixer = PDBFixer(pdbid=pdbid)
 
     # Remove chains based on hand curated .csv file
@@ -252,6 +216,7 @@ def pdb_fix_pdbfixer(pdbid, file_pathway, ph, chains_to_remove):
         fixer.removeChains(chainIds=chains_list)
 
     # Determine the first and last residue resolved in chain 0
+    from natsort import natsorted
     chains = [chain for chain in fixer.topology.chains()]
     resindices = [residue.index for residue in chains[0].residues()]
     resindices = natsorted(resindices)
@@ -274,6 +239,7 @@ def pdb_fix_pdbfixer(pdbid, file_pathway, ph, chains_to_remove):
     fixer.addMissingAtoms()
     fixer.addMissingHydrogens(ph)
     # Write fixed PDB file, with all of the waters and ligands
+    from simtk.openmm.app import PDBFile
     PDBFile.writeFile(fixer.topology, fixer.positions, open(os.path.join(file_pathway,
                                                                          '%s_fixed_ph%s.pdb' % (pdbid, ph)), 'w'),
                       keepIds=keepNumbers)
@@ -291,6 +257,7 @@ def pdb_fix_pdbfixer(pdbid, file_pathway, ph, chains_to_remove):
 
 
 def pdb_fix_schrodinger(pdbid, file_pathway, ph):
+    from .schrodinger import protprep
 
     print(pdbid)
     input_file = os.path.join(file_pathway, '%s.pdb' % pdbid)
@@ -318,6 +285,7 @@ def download_pdb(pdbid, file_pathway):
         pdb = get_pdb_biological_unit(pdbid)
 
     else:
+        import pypdb
         pdb = pypdb.get_pdb_file(pdbid)
 
     write_file(os.path.join(file_pathway, '%s.pdb' % pdbid), pdb)
@@ -425,6 +393,7 @@ def make_chem_id_list(dictionary, ligname):
 
 
 def convert_csv_to_dict(filename):
+    import csv
     reader = csv.DictReader(open(filename))
     dictionary = {}
     for row in reader:
@@ -434,7 +403,40 @@ def convert_csv_to_dict(filename):
     return dictionary
 
 
-if __name__ == '__main__':
+def pdbfinder_cli():
+    """Command-line driver for pdbfinder
+
+    TODO: Allow to be driven by kwargs.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Automated script to search PDB by chemical ID")
+    parser.add_argument('-l', required=False, dest='lig', default='None',
+                        help='The ligand that you want all PDBS for. Specify when using Lig or LigAndTarget modes')
+
+    parser.add_argument('--mode', required=False, default='LigAll', dest='mode',
+                        help='What mode query would you like to make. Currently implemented modes are Lig, LigAndTarget, LigAll and Apo modes')
+
+    parser.add_argument('--fix', required=False, action='store_true', dest='fix',
+                        help='Setting flag fixes problems with the PDB')
+
+    parser.add_argument('--ph', required=False, default=7.4, type=float, dest='ph',
+                        help='Use to set pH to something other than 7.0')
+
+    parser.add_argument('--renumber', required=False, action='store_false', dest='keepNumbers',
+                        help='Set flag to renumber PDB and not use original numbering')
+
+    parser.add_argument('--biological_unit', required=False, action='store_true', dest='biological_unit',
+                        help='Set flag to retrieve biological unit for all structures')
+
+    args = parser.parse_args()
+
+    ligand = args.lig
+    query_mode = args.mode
+    fix = args.fix
+    ph = args.ph
+    keepNumbers = args.keepNumbers
+    bunit = args.biological_unit
 
     # Assert that query_mode is an implemented search typ
     assert query_mode in {'Lig', 'LigAndTarget', 'LigAll', 'Apo'}

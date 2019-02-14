@@ -10,4 +10,8 @@ Modelling tools
     :nosignatures:
     :toctree: api/generated/
 
-    ClassName
+    pdbfinder_cli
+    ligand_target_search_mode
+    all_ligand_search_mode
+    apo_search_mode
+    

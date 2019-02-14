@@ -1,14 +1,10 @@
 #!/usr/local/bin/env python
 # Borrowed from yank-benchmark: https://github.com/choderalab/yank-benchmark/blob/master/scripts/docking.py
-# Written by AXR, modified by SKA to enable hybrid
-import os
-
-import openmoltools as moltools
-from openeye import oechem, oedocking
-
+# Written by AXR, modified by SKA to enable hybrid, cleaned up by JDC
 
 def create_receptor(protein_pdb_path, box):
     """Create an OpenEye receptor from a PDB file.
+
     Parameters
     ----------
     protein_pdb_path : str
@@ -16,11 +12,14 @@ def create_receptor(protein_pdb_path, box):
     box : 1x6 array of float
         The minimum and maximum values of the coordinates of the box
         representing the binding site [xmin, ymin, zmin, xmax, ymax, zmax].
+
     Returns
     -------
     receptor : openeye.oedocking.OEReceptor
         The OpenEye receptor object.
     """
+
+    from openeye import oechem
     input_mol_stream = oechem.oemolistream(protein_pdb_path)
     protein_oemol = oechem.OEGraphMol()
     oechem.OEReadMolecule(input_mol_stream, protein_oemol)
@@ -33,18 +32,22 @@ def create_receptor(protein_pdb_path, box):
 
 
 def create_bound_receptor(protein_pdb_path, ligand_file_path):
-    """Create an OpenEye receptor from a PDB file and ligand mol2 file.
+    """Create an OpenEye receptor from a PDB file and ligand file.
+
     Parameters
     ----------
     protein_pdb_path : str
         Path to the receptor PDB file.
     ligand_file_path : str
-        path to the ligand file. Can be any file supported by openeye
+        Path to the ligand file (e.g. Tripos mol2).
+        Can be any file format supported by openeye.
     Returns
     -------
     receptor : openeye.oedocking.OEReceptor
-        The OpenEye receptor object.
+        The OpenEye receptor object
     """
+    from openeye import oechem, oedocking
+
     # Load in protein
     input_mol_stream = oechem.oemolistream(protein_pdb_path)
     protein_oemol = oechem.OEGraphMol()
@@ -60,18 +63,32 @@ def create_bound_receptor(protein_pdb_path, ligand_file_path):
 
     return receptor
 
-
 def load_receptor(receptor_oeb_path):
-    """Load an OpenEye receptor file in oeb format."""
+    """Load an OpenEye receptor file in oeb format.
+
+    Parameters
+    ----------
+    receptor_oeb_path : str
+        Receptor in OpenEye oeb binary format
+
+    Returns
+    -------
+    receptor : openeye.oedocking.OEReceptor
+        The OpenEye receptor object
+    """
+    from openeye import oechem, oedocking
+    import os
+
     if not os.path.exists(receptor_oeb_path):
         raise FileNotFoundError('Could not find ', receptor_oeb_path)
+
     receptor = oechem.OEGraphMol()
     oedocking.OEReadReceptorFile(receptor, receptor_oeb_path)
     return receptor
 
-
 def dock_molecule(receptor, molecule_smiles, n_conformations=10, n_poses=2):
     """Run the multi-conformer docker.
+
     Parameters
     ----------
     receptor : openeye.oedocking.OEReceptor
@@ -83,11 +100,14 @@ def dock_molecule(receptor, molecule_smiles, n_conformations=10, n_poses=2):
         docker (default is 10).
     n_poses : int, optional
         Number of binding poses to return.
+
     Returns
     -------
     docked_oemol : openeye.oechem.OEMol
         The docked multi-conformer OpenEye molecule.
     """
+    from openeye import oechem, oedocking
+    import openmoltools as moltools
 
     if oedocking.OEReceptorHasBoundLigand(receptor):
         dock = oedocking.OEHybrid(oedocking.OEDockMethod_Hybrid2, oedocking.OESearchResolution_High)
@@ -108,6 +128,7 @@ def dock_molecule(receptor, molecule_smiles, n_conformations=10, n_poses=2):
 
 def pose_molecule(receptor, molecule_smiles, n_conformations=10, n_poses=2):
     """Run the multi-conformer docker.
+
     Parameters
     ----------
     receptor : openeye.oedocking.OEReceptor
@@ -119,11 +140,13 @@ def pose_molecule(receptor, molecule_smiles, n_conformations=10, n_poses=2):
         docker (default is 10).
     n_poses : int, optional
         Number of binding poses to return.
+
     Returns
     -------
     docked_oemol : openeye.oechem.OEMol
         The docked multi-conformer OpenEye molecule.
     """
+    from openeye import oechem, oedocking
 
     poser = oedocking.OEPosit()
 
