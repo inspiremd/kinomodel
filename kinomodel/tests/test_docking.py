@@ -25,7 +25,6 @@ class DockingTestCase(unittest.TestCase):
         from kinomodel.docking import hybrid_docking
         receptor_path = get_data_filename('docking/3cs9.pdb')
         molecules_path = get_data_filename('fda-approved.smi')
-        #with tempfile.TemporaryDirectory() as docked_molecules_directory:
-        docked_molecules_directory = 'tmp'
-        docked_molecules_path = os.path.join(docked_molecules_directory, 'docked.mol2')
-        hybrid_docking(receptor_path, molecules_path, docked_molecules_path)
+        with tempfile.TemporaryDirectory() as docked_molecules_directory:
+            docked_molecules_path = os.path.join(docked_molecules_directory, 'docked.mol2')
+            hybrid_docking(receptor_path, molecules_path, docked_molecules_path)
