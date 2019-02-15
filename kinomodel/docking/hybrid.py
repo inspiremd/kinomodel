@@ -1,4 +1,4 @@
-def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses=1):
+def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses=10):
     """Automated hybrid docking of small molecules to a receptor.
 
     Parameters
@@ -21,7 +21,7 @@ def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses
     """
     from .docking import create_receptor, load_receptor, pose_molecule
     from openeye import oedocking, oechem
-    import openmoltools as moltools
+    import openmoltools as moltools # TODO: Bring these methods into this module
 
     # Try to load pre-prepared receptor from specified file
     receptor = oechem.OEGraphMol()
@@ -51,6 +51,18 @@ def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses
     # Open file for writing docked molecules
     docked_molecules_ostream = oechem.oemolostream(docked_molecules_path)
 
+    # Configure omega
+    # From canonical recipe: https://docs.eyesopen.com/toolkits/cookbook/python/modeling/am1-bcc.html
+    from openeye import oeomega
+    omega = oeomega.OEOmega()
+    omega.SetIncludeInput(False)
+    omega.SetCanonOrder(False)
+    omega.SetSampleHydrogens(True)
+    eWindow = 15.0
+    omega.SetEnergyWindow(eWindow)
+    omega.SetMaxConfs(800)
+    omega.SetRMSThreshold(1.0)
+
     # Dock all molecules requested
     dock_method = oedocking.OEDockMethod_Hybrid2
     dock_resolution = oedocking.OESearchResolution_Standard
@@ -60,8 +72,19 @@ def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses
     molecule = oechem.OEGraphMol()
     for molecule in molecules_istream.GetOEMols():
         print("docking", molecule.GetTitle())
-        docked_molecule = oechem.OEGraphMol()
         #docked_molecules = pose_molecule(receptor, molecule, n_poses=n_poses)
+        #molecule = moltools.openeye.get_charges(molecule, keep_confs=10)
+
+        # Generate conformers
+        if not omega(molecule):
+            continue
+
+        # Apply charges
+        from openeye import oequacpac
+        oequacpac.OEAssignCharges(molecule, oequacpac.OEAM1BCCELF10Charges())
+
+        # Dock
+        docked_molecule = oechem.OEGraphMol()
         dock.DockMultiConformerMolecule(docked_molecule, molecule)
         sdtag = oedocking.OEDockMethodGetName(dock_method)
         oedocking.OESetSDScore(docked_molecule, dock, sdtag)
