@@ -103,21 +103,20 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     dis = dis[~np.all(dis == 0, axis=1)]
     # check if there is any missing coordinates;
     # if so, skip distance calculation for those residues
-    check_flag = 1
+    check_dis = 0
     del_lst = []
     # find out lines with 0 at the protein residue position
     for i in range(len(dis)):
-        if dis[i][1] == 0:
-            del_lst.append(i)
-
+        if dis[i-check_dis][1] == 0:
+            del_lst.append(i-check_dis)
+            check_dis += 1
     if del_lst:
         # delete them all at once
         dis = np.delete(dis, (del_lst), axis=0)
-        check_flag = 0
     for i in range(len(dis)):
         # the atom indices fed to mdtraj should be 0-based
-        dis[i] -= 1
-    if check_flag:
+        dis[i-check_dis] -= 1
+    if check_dis == 0:
         logging.info(
             "There is no missing coordinates.  All distances will be computed."
         )

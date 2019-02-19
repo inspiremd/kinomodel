@@ -237,25 +237,26 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
 
         count += 1
     # check if there is any missing coordinates; if so, skip dihedral/distance calculation for those residues
-    check_flag = 1
+    check_dih = 0
+    check_dis = 0
     for i in range(len(dih)):
-        if 0 in dih[i]:
-            dih = np.delete(dih, (i), axis=0)
+        if 0 in dih[i-check_dih]:
+            dih = np.delete(dih, (i-check_dih), axis=0)
             logging.info(
-                'The "' + str(dih_names[i]) +
+                'The "' + str(dih_names[i-check_dih]) +
                 '" dihedral will not be computed due to missing coordinates.')
-            dih_names.remove(dih_names[i])
-            check_flag = 0
+            dih_names.remove(dih_names[i-check_dih])
+            check_dih += 1
     for i in range(len(dis)):
-        if 0 in dis[i]:
-            dis = np.delete(dis, (i), axis=0)
+        if 0 in dis[i-check_dis]:
+            dis = np.delete(dis, (i-check_dis), axis=0)
             logging.info(
-                'The "' + str(dis_names[i]) +
+                'The "' + str(dis_names[i-check_dis]) +
                 '" distance will not be calculated due to missing coordinates.'
             )
-            dis_names.remove(dis_names[i])
-            check_flag = 0
-    if check_flag:
+            dis_names.remove(dis_names[i-check_dis])
+            check_dis += 1
+    if check_dih == 0 and check_dis == 0:
         logging.info(
             "There is no missing coordinates.  All dihedrals and distances will be computed."
         )
