@@ -22,3 +22,5 @@ TODO: What are these files, and where do they come from?
 
 * `3pp0_A.pdb` - what is this, and where does it come from?
 * `3rcd_A.pdb` - what is this, and where does it come from?
+* `fda-approved.smi` - SMILES strings of FDA-approved small molecule kinase inhibitors
+* `hauser-abl-benchmark` - kinase:inhibitor structures from https://www.nature.com/articles/s42003-018-0075-x

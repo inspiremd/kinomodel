@@ -33,6 +33,7 @@ Using kinomodel
 
    installation
    models
+   docking
    features
    cv
    analysis
