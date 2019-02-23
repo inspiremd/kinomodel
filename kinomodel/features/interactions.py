@@ -40,6 +40,8 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     .. todo :: Use kwargs with sensible defaults instead of relying only on positional arguments.
 
     """
+    import tempfile
+    import os
     import mdtraj as md
     import numpy as np
 
@@ -52,12 +54,16 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdbid)) as response:
         pdb_file = response.read()
 
-    # TODO: Use "with tempfile.TemporaryDirectory" context manager idiom to store temporary files instead
-    with open('{}.pdb'.format(pdbid), 'w') as file:
-        file.write(pdb_file.decode())
+    with tempfile.TemporaryDirectory() as pdb_directory:
+        pdb = os.path.join(pdb_directory,'{}.pdb'.format(pdbid))
+        with open(pdb, 'w') as file:
+            file.write(pdb_file.decode())
+            # load traj before the temp pdb file was removed
+            if coordfile == 'pdb':
+                traj = md.load(pdb)
+            # get topology info from the structure
+            topology = md.load(pdb).topology
 
-    # get topology info from the structure
-    topology = md.load(str(pdbid) + '.pdb').topology
     table, bonds = topology.to_dataframe()
     atoms = table.values
     # translate a letter chain id into a number index (A->0, B->1 etc)
@@ -103,41 +109,35 @@ def compute_simple_interaction_features(pdbid, chainid, coordfile, ligand_name, 
     dis = dis[~np.all(dis == 0, axis=1)]
     # check if there is any missing coordinates;
     # if so, skip distance calculation for those residues
-    check_dis = 0
     del_lst = []
     # find out lines with 0 at the protein residue position
     for i in range(len(dis)):
-        if dis[i-check_dis][1] == 0:
-            del_lst.append(i-check_dis)
-            check_dis += 1
-    if del_lst:
-        # delete them all at once
-        dis = np.delete(dis, (del_lst), axis=0)
+        if dis[i][1] == 0:
+            dis[i][0] = 0
     for i in range(len(dis)):
+        if dis[i][0] and dis[i][1]:
         # the atom indices fed to mdtraj should be 0-based
-        dis[i-check_dis] -= 1
-    if check_dis == 0:
-        logging.info(
-            "There is no missing coordinates.  All distances will be computed."
-        )
-    else:
-        logging.info(
-            "Some of the pairwise distances will not be calculated due to missing coordinates."
-        )
+            dis[i] -= 1
+    #if check_dis == 0:
+        #logging.info(
+        #    "There is no missing coordinates.  All distances will be computed."
+        #)
+    #else:
+        #logging.info(
+        #    "Some of the pairwise distances will not be calculated due to missing coordinates."
+        #)
 
     # calculate the distances for the user-specifed structure (a static structure or an MD trajectory)
-    if coordfile == 'pdb':
-        traj = md.load(str(pdbid) + '.pdb')
-    elif coordfile == 'dcd':
+    if coordfile == 'dcd':
         traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
     mean_dist = []
     for frame in md.compute_distances(traj, dis):
         mean_dist.append(np.mean(frame))
 
-    logging.info(
-        "The mean distance between ligand heavy atoms and CAs of the 85 binding pocket residues for PDB# "
-        + str(pdbid) + ", chain " + str(chainid) + " is: " +
-        str(mean_dist))
+    #logging.info(
+    #    "The mean distance between ligand heavy atoms and CAs of the 85 binding pocket residues for PDB# "
+    #    + str(pdbid) + ", chain " + str(chainid) + " is: " +
+    #    str(mean_dist))
 
     # clean up
     # TODO: This is dangerous! Instead, rely on using the "with tempfile.TemporaryDirectory" context manager idiom to create and clean up temporary directories

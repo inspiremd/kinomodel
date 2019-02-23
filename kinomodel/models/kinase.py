@@ -1,5 +1,5 @@
 """
-kinase_model.py
+kinase.py
 Defines the Kinase class
 
 """

@@ -21,7 +21,7 @@ def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses
     """
     from .docking import create_receptor, load_receptor, pose_molecule
     from openeye import oedocking, oechem
-    import openmoltools as moltools # TODO: Bring these methods into this module
+    #import openmoltools as moltools # TODO: Bring these methods into this module
 
     # Try to load pre-prepared receptor from specified file
     receptor = oechem.OEGraphMol()
@@ -43,7 +43,7 @@ def hybrid_docking(receptor_path, molecules_path, docked_molecules_path, n_poses
             print('Creating receptor using reference ligand...')
             oedocking.OEMakeReceptor(receptor, protein, ligand)
             # TODO: We can store prepared receptor file if desired
-            # oedocking.OEWriteReceptorFile(receptor, output_receptor_filename)
+            oedocking.OEWriteReceptorFile(receptor, '/home/guoj1/projects/INSPIRE/kinomodel/kinomodel/data/docking/prepared_receptor.oeb')
 
         else:
             raise Exception('Could not split specified PDB file {} into receptor and reference ligand'.format(receptor_path))

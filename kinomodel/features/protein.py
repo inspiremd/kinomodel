@@ -99,6 +99,8 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
 
 
     """
+    import tempfile
+    import os
     import mdtraj as md
     import numpy as np
 
@@ -111,12 +113,16 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
     with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdbid)) as response:
         pdb_file = response.read()
 
-    # TODO: Use "with tempfile.TemporaryDirectory" context manager idiom to store temporary files instead
-    with open('{}.pdb'.format(pdbid), 'w') as file:
-        file.write(pdb_file.decode())
+    with tempfile.TemporaryDirectory() as pdb_directory:
+        pdb = os.path.join(pdb_directory,'{}.pdb'.format(pdbid))
+        with open(pdb, 'w') as file:
+            file.write(pdb_file.decode())
+            # load traj before the temp pdb file was removed
+            if coordfile == 'pdb':
+                traj = md.load(pdb)
+            # get topology info from the structure
+            topology = md.load(pdb).topology
 
-    # get topology info from the structure
-    topology = md.load(str(pdbid) + '.pdb').topology
     table, bonds = topology.to_dataframe()
     atoms = table.values
     # translate a letter chain id into a number index (A->0, B->1 etc)
@@ -237,36 +243,34 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
 
         count += 1
     # check if there is any missing coordinates; if so, skip dihedral/distance calculation for those residues
-    check_dih = 0
-    check_dis = 0
+    check_flag = 1
     for i in range(len(dih)):
-        if 0 in dih[i-check_dih]:
-            dih = np.delete(dih, (i-check_dih), axis=0)
-            logging.info(
-                'The "' + str(dih_names[i-check_dih]) +
-                '" dihedral will not be computed due to missing coordinates.')
-            dih_names.remove(dih_names[i-check_dih])
-            check_dih += 1
+        if 0 in dih[i]:
+            dih[i] = [0,0,0,0]
+            #logging.info(
+            #    'The "' + str(dih_names[i]) +
+            #    '" dihedral will not be computed due to missing coordinates.')
+            check_flag = 0
     for i in range(len(dis)):
-        if 0 in dis[i-check_dis]:
-            dis = np.delete(dis, (i-check_dis), axis=0)
-            logging.info(
-                'The "' + str(dis_names[i-check_dis]) +
-                '" distance will not be calculated due to missing coordinates.'
-            )
-            dis_names.remove(dis_names[i-check_dis])
-            check_dis += 1
-    if check_dih == 0 and check_dis == 0:
-        logging.info(
-            "There is no missing coordinates.  All dihedrals and distances will be computed."
-        )
+        if 0 in dis[i]:
+            dis[i] = [0,0]
+            #logging.info(
+            #    'The "' + str(dis_names[i]) +
+            #    '" distance will not be calculated due to missing coordinates.'
+            #)
+            check_flag = 0
+    #if check_flag:
+        #logging.info(
+        #    "There is no missing coordinates.  All dihedrals and distances will be computed."
+        #)
     # calculate the dihedrals and distances for the user-specifed structure (a static structure or an MD trajectory)
-    if coordfile == 'pdb':
-        traj = md.load(str(pdbid) + '.pdb')
-    elif coordfile == 'dcd':
+    if coordfile == 'dcd':
         traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
     dihedrals = md.compute_dihedrals(traj, dih)
     distances = md.compute_distances(traj, dis)
+
+    # option to log the results
+    '''
     logging.info("Key dihedrals relevant to kinase conformation are as follows:")
     logging.info(dih_names)
     #logging.info(dihedrals/np.pi*180) # dihedrals in degrees
@@ -274,6 +278,7 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
     logging.info("Key distances relevant to kinase conformation are as follows:")
     logging.info(dis_names)
     logging.info(distances)
+    '''
 
     # clean up
     # TODO: This is dangerous! Instead, rely on using the "with tempfile.TemporaryDirectory" context manager idiom to create and clean up temporary directories
