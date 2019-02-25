@@ -17,8 +17,10 @@ requirements:
     - python
     - openmm
     - numpy
-    - mdtraj
     - requests
+    - pdbfixer
+    #- pypdb # TODO: Build this for omnia or conda-forge
+    - xmltodict
 
 test:
   requires:

@@ -1,5 +1,5 @@
 """
-Driver for featurizing models.
+Driver for featurizing kinase models.
 
 """
 
@@ -103,10 +103,17 @@ def featurize(**kwargs):
 
     Returns
     -------
-    my_kinase: kinomodel.models.Kinase
-        Contains basic information of a kinase including PDB code, chain id, kinase id, name, structure id,
-        ligand name, the 85 pocket residues and their numbering, key dihedrals and distances that define
-        the conformational state of a kinase, the mean distance between ligand heavy atoms and the pocket residues etc.
+    key_res : list of int
+        Key residue indices that are involved in featurization.
+    dihedrals: list of floats
+        A list (one frame) or lists (multiple frames) of dihedrals relevant to kinase conformation.
+    distances: list of floats
+        A list (one frame) or lists (multiple frames) of intramolecular distances relevant to kinase conformation.
+    AND/OR
+
+    mean_dist: float
+            A float (one frame) or a list of floats (multiple frames), which is the mean pairwise distance
+            between ligand heavy atoms and the CAs of the 85 pocket residues.
 
     .. todo ::
 
@@ -114,41 +121,38 @@ def featurize(**kwargs):
        Think about the API from the perspective of someone wanting to assemble a program using this API.
 
     """
-    from kinomodel.models import Kinase
-    from kinomodel.features.klifs import query_klifs_database
-    from kinomodel.features import protein as pf
-    from kinomodel.features import interactions as inf
+
+    # absolute import (with kinomodel installed)
+    #from kinomodel.features import query_klifs
+    #from kinomodel.features import protein as pf
+    #from kinomodel.features import interactions as inf
+
+    # JG (temperary)
+    from features import query_klifs
+    from features import protein as pf
+    from features import interactions as inf
 
     args = _parse_arguments(**kwargs)
 
     my_kinase = None
 
     if args.feature == "conf":
-        klifs = query_klifs_database(args.pdb, args.chain)
-        key_res = pf.key_klifs_residues(klifs['numbering'])
-        mean_dist = 0
-        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs['numbering'])
+        klifs = query_klifs.query_klifs_database(args.pdb, args.chain)
+        key_res = pf.key_klifs_residues(klifs.numbering)
+        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs.numbering)
+        return key_res, dihedrals, distances
 
     elif args.feature == "interact":
-        klifs = query_klifs_database(args.pdb, args.chain)
-        key_res = []
-        dihedrals = []
-        distances = []
-        mean_dist = inf.compute_simple_interaction_features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
+        klifs = query_klifs.query_klifs_database(args.pdb, args.chain)
+        mean_dist = inf.compute_simple_interaction_features(args.pdb, args.chain, args.coord, klifs.ligand, klifs.numbering)
+        return mean_dist
 
     elif args.feature == "both":
-        klifs = query_klifs_database(args.pdb, args.chain)
-        key_res = pf.key_klifs_residues(klifs['numbering'])
-        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs['numbering'])
-        mean_dist = inf.features(args.pdb, args.chain, args.coord, klifs['ligand'], klifs['numbering'])
-
+        klifs = query_klifs.query_klifs_database(args.pdb, args.chain)
+        key_res = pf.key_klifs_residues(klifs.numbering)
+        (dihedrals, distances) = pf.compute_simple_protein_features(args.pdb, args.chain, args.coord, klifs.numbering)
+        mean_dist = inf.features(args.pdb, args.chain, args.coord, klifs.ligand, klifs.numbering)
+        return key_res, dihedrals, distances, mean_dist
     else:
         raise Exception("Unknown feature '{}'".format(args.feature))
-
-    # TODO: We don't want to have to pass empty things or zeros to the Kinase object.
-    # Let's reconsider what the best object model for this information is.
-    my_kinase = Kinase(
-        args.pdb, args.chain, klifs['kinase_id'], klifs['name'], klifs['struct_id'], klifs['ligand'],
-        klifs['pocket_seq'], klifs['numbering'], key_res, dihedrals, distances, mean_dist)
-
-    return my_kinase
+        return
