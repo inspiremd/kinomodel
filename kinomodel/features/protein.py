@@ -110,6 +110,13 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
     # TODO: Since we retrieve the PDB file in multiple pieces of code, let's refactor this into one utility function
     # to avoid code duplication.
     import urllib
+
+    # get toppology info either from fixed pdb or original pdb file (based on input) 
+    # if analyzing a trajectory 
+    if coordfile == 'dcd':
+        traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
+        topology = md.load(str(pdbid)+'_fixed.pdb').topology
+
     with urllib.request.urlopen('http://www.pdb.org/pdb/files/{}.pdb'.format(pdbid)) as response:
         pdb_file = response.read()
 
@@ -119,10 +126,9 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
             file.write(pdb_file.decode())
             # load traj before the temp pdb file was removed
             if coordfile == 'pdb':
+                print("loading top from pdb")
                 traj = md.load(pdb)
-            # get topology info from the structure
-            topology = md.load(pdb).topology
-
+                topology = md.load(pdb).topology
     table, bonds = topology.to_dataframe()
     atoms = table.values
     # translate a letter chain id into a number index (A->0, B->1 etc)
@@ -264,8 +270,6 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
         #    "There is no missing coordinates.  All dihedrals and distances will be computed."
         #)
     # calculate the dihedrals and distances for the user-specifed structure (a static structure or an MD trajectory)
-    if coordfile == 'dcd':
-        traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
     dihedrals = md.compute_dihedrals(traj, dih)
     distances = md.compute_distances(traj, dis)
 
