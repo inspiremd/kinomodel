@@ -66,7 +66,7 @@ def query_klifs_database(pdbid, chainid):
             chain_found = True
     if not chain_found:
         raise ValueError("No data found for chainid '{}'."
-                         "Please make sure you provide a capital letter (A, B, C, ...) as a chain ID.".format(chainid))
+                         "Please make sure you provide a capital letter (A, B, C, ...) as a chain ID and the structure has the corresponding chain.".format(chainid))
 
     # Get the numbering of the 85 pocket residues
     cmd = "http://klifs.vu-compmedchem.nl/details.php?structure_id=" + str(struct_id)
