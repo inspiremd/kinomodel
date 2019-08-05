@@ -22,6 +22,10 @@ requirements:
     #- pypdb # TODO: Build this for omnia or conda-forge
     - xmltodict
 
+dependencies:
+    # dependencies
+    - numpy
+
 test:
   requires:
     - pytest
