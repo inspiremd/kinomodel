@@ -24,8 +24,9 @@ requirements:
 
 dependencies:
     # dependencies
-    - numpy
-
+    #- numpy
+    # Base depends
+    - pip
 test:
   requires:
     - pytest
