@@ -116,7 +116,8 @@ def compute_simple_protein_features(pdbid, chainid, coordfile, numbering):
     # get toppology info either from fixed pdb or original pdb file (based on input) 
     # if analyzing a trajectory 
     if coordfile == 'dcd':
-        traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
+        traj = md.load(subprocess.check_output('ls *dcd', shell=True).strip(b'\n').decode("utf-8"),top = str(pdbid) + '_minimized.pdb')
+        #traj = md.load(str(pdbid) + '.dcd',top = str(pdbid) + '_fixed_solvated.pdb')
         topology = md.load(str(pdbid)+'_fixed.pdb').topology
 
     chain_lst = [] # get a list of chains to identify the chain of interest
